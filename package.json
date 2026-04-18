@@ -13,6 +13,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "latest",
     "@tailwindcss/postcss": "^4",
+    "exceljs": "^4.4.0",
     "framer-motion": "^12",
     "lucide-react": "latest",
     "next": "^15",
@@ -21,7 +22,6 @@
     "react-dom": "^19",
     "recharts": "^2",
     "tailwindcss": "^4",
-    "xlsx": "^0.18",
     "zod": "^3"
   },
   "devDependencies": {

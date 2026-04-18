@@ -22,7 +22,7 @@ The application is a Next.js 15 app deployed on Vercel. Statistical calculations
 - **Styling**: Tailwind CSS v4, CSS-first configuration in `src/app/globals.css` using `@theme`. There is no `tailwind.config.ts` file
 - **Animations**: Framer Motion v12
 - **Charts**: Recharts
-- **Data parsing**: Papaparse (CSV), SheetJS / `xlsx` (Excel)
+- **Data parsing**: Papaparse (CSV), ExcelJS / `exceljs` (Excel)
 - **Validation**: Zod
 - **AI**: `@anthropic-ai/sdk`, model `claude-sonnet-4-6` in production API calls
 - **Testing**: Vitest + @testing-library/react + jsdom
