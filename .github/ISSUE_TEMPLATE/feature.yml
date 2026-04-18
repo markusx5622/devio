@@ -1,0 +1,56 @@
+name: Feature implementation
+description: A well-specified feature task ready for the Copilot coding agent.
+title: ""
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fill out every section. Incomplete issues will not be picked up by the coding agent.
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      description: Which project phase does this issue belong to?
+      options:
+        - "Phase 0 — Bootstrap"
+        - "Phase 1 — SPC architecture"
+        - "Phase 2 — Statistical engine"
+        - "Phase 3 — Dashboard UI"
+        - "Phase 4 — AI layer"
+        - "Phase 5 — Polish"
+        - "Phase 6 — Deploy"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this feature needed? What problem does it solve?
+    validations:
+      required: true
+  - type: textarea
+    id: specification
+    attributes:
+      label: Technical specification
+      description: Precise description of what must be implemented, including types, function signatures, and expected behaviour.
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Files to create or modify
+      description: List every file path that will be created or changed.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Checkboxes that must all be ticked before the PR can be merged.
+      value: |
+        - [ ] `pnpm test` — all tests pass
+        - [ ] `pnpm lint` — no errors
+        - [ ] `pnpm build` — production build succeeds
+    validations:
+      required: true
