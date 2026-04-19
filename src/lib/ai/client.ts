@@ -2,14 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import type { AnalysisResult } from '@/lib/spc/types';
 import { SYSTEM_PROMPT_SPC, buildUserPrompt } from './prompts';
 import { SpcInsightsSchema, type SpcInsights, type AiError } from './types';
-
-// ---------------------------------------------------------------------------
-// Configuration
-// ---------------------------------------------------------------------------
-
-const AI_MODEL = process.env.AI_MODEL ?? 'claude-haiku-4-5-20251001';
-const AI_MAX_TOKENS = 2048;
-const AI_TIMEOUT_MS = 30_000;
+import { AI_MODEL, AI_MAX_TOKENS, AI_TIMEOUT_MS, requireApiKey } from './config';
 
 // ---------------------------------------------------------------------------
 // Client (lazy-initialized)
@@ -19,13 +12,7 @@ let _client: Anthropic | null = null;
 
 function getClient(): Anthropic {
   if (!_client) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      throw new Error(
-        'ANTHROPIC_API_KEY is not set. Add it to your .env.local file.',
-      );
-    }
-    _client = new Anthropic({ apiKey });
+    _client = new Anthropic({ apiKey: requireApiKey() });
   }
   return _client;
 }
