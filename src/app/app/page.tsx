@@ -9,6 +9,7 @@ import { UploadDropzone } from '@/components/upload/UploadDropzone';
 import { ControlChart } from '@/components/charts/ControlChart';
 import { CapabilityCard } from '@/components/charts/CapabilityCard';
 import { ViolationTable } from '@/components/results/ViolationTable';
+import { InsightsPanel } from '@/components/ai/InsightsPanel';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -127,6 +128,11 @@ function ResultsGrid({ analysis }: { analysis: AnalysisResult }) {
           <ViolationTable violations={analysis.violations} />
         </section>
       </div>
+
+      {/* AI Insights */}
+      <section aria-label="Análisis con inteligencia artificial">
+        <InsightsPanel analysis={analysis} />
+      </section>
     </div>
   );
 }
