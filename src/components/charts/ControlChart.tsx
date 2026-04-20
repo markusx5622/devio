@@ -12,7 +12,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Dot,
 } from 'recharts';
 import type { AnalysisResult } from '@/lib/spc/types';
 
@@ -45,15 +44,14 @@ const RULE_LABELS: Record<string, string> = {
 };
 
 const CHART_TITLES: Record<ChartVariant, string> = {
-  means: 'Carta de Medias (X̄)',
-  ranges: 'Carta de Rangos / Desviaciones (R/S)',
+  means:       'Carta de Medias (X̄)',
+  ranges:      'Carta de Rangos / Desviaciones (R/S)',
   individuals: 'Carta de Individuales (I)',
 };
 
 function buildChartData(analysis: AnalysisResult, chartType: ChartVariant): ChartPoint[] {
   const { chart, violations } = analysis;
 
-  // Build violation index → labels map
   const violationMap = new Map<number, string[]>();
   violations.forEach((v) => {
     v.subgroupIndices.forEach((idx) => {
@@ -110,7 +108,6 @@ function buildChartData(analysis: AnalysisResult, chartType: ChartVariant): Char
         violationLabels: [],
       }));
     }
-    // I-MR: show moving ranges
     if (chart.type === 'i-mr') {
       return chart.movingRanges.map((mr, i) => ({
         index: i + 2,
@@ -127,40 +124,72 @@ function buildChartData(analysis: AnalysisResult, chartType: ChartVariant): Char
   return [];
 }
 
-// Custom dot: red for violations, blue otherwise
-function CustomDot(props: {
-  cx?: number;
-  cy?: number;
-  payload?: ChartPoint;
-  r?: number;
-}) {
+// ---------------------------------------------------------------------------
+// Custom dot — violation dots have a pulsing ring
+// ---------------------------------------------------------------------------
+
+function CustomDot(props: { cx?: number; cy?: number; payload?: ChartPoint }) {
   const { cx, cy, payload } = props;
-  if (cx === undefined || cy === undefined || !payload) return <g />;
+  if (cx === undefined || cy === undefined || !payload) return null;
 
-  const fill = payload.violated ? '#ef4444' : '#3b82f6';
-  const r = payload.violated ? 5 : 3.5;
+  if (payload.violated) {
+    return (
+      <g>
+        <circle
+          cx={cx}
+          cy={cy}
+          r={8}
+          fill="none"
+          stroke="#ef4444"
+          strokeWidth={1.5}
+          opacity={0.35}
+          className="ring-pulse"
+        />
+        <circle cx={cx} cy={cy} r={5} fill="#ef4444" stroke="#b91c1c" strokeWidth={1} />
+      </g>
+    );
+  }
 
-  return (
-    <Dot cx={cx} cy={cy} r={r} fill={fill} stroke={payload.violated ? '#b91c1c' : '#1d4ed8'} strokeWidth={1} />
-  );
+  return <circle cx={cx} cy={cy} r={3.5} fill="#3b82f6" stroke="#1d4ed8" strokeWidth={1} />;
 }
 
-// Tooltip content
-function CustomTooltip({ active, payload }: { active?: boolean; payload?: { payload: ChartPoint }[] }) {
+// ---------------------------------------------------------------------------
+// Custom tooltip — shows sigma distance and violation details
+// ---------------------------------------------------------------------------
+
+function CustomTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: { payload: ChartPoint }[];
+}) {
   if (!active || !payload?.length) return null;
   const point = payload[0]!.payload;
 
+  const sigma = (point.ucl - point.cl) / 3;
+  const sigmaDistance = sigma > 0 ? (point.value - point.cl) / sigma : 0;
+  const sigmaStr =
+    sigmaDistance >= 0
+      ? `+${sigmaDistance.toFixed(1)}σ del centro`
+      : `${sigmaDistance.toFixed(1)}σ del centro`;
+
   return (
-    <div className="rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 p-3 shadow-lg text-xs space-y-1 max-w-xs">
+    <div className="rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-sm p-3 shadow-lg text-xs space-y-1.5 max-w-xs">
       <p className="font-semibold text-neutral-700 dark:text-neutral-200">Punto {point.index}</p>
-      <p className="font-mono text-neutral-600 dark:text-neutral-300">Valor: <span className="font-bold">{point.value.toFixed(4)}</span></p>
-      <p className="text-neutral-400">UCL: {point.ucl.toFixed(4)}</p>
-      <p className="text-neutral-400">CL: {point.cl.toFixed(4)}</p>
-      <p className="text-neutral-400">LCL: {point.lcl.toFixed(4)}</p>
+      <p className="font-mono text-neutral-800 dark:text-neutral-100 tabular-nums">
+        Valor: <span className="font-bold">{point.value.toFixed(4)}</span>
+      </p>
+      <p className="text-neutral-500 dark:text-neutral-400 tabular-nums">{sigmaStr}</p>
+      <div className="pt-0.5 space-y-0.5 text-neutral-400">
+        <p className="tabular-nums">UCL {point.ucl.toFixed(4)}</p>
+        <p className="tabular-nums">CL&nbsp; {point.cl.toFixed(4)}</p>
+        <p className="tabular-nums">LCL {point.lcl.toFixed(4)}</p>
+      </div>
       {point.violationLabels.length > 0 && (
-        <div className="pt-1 border-t border-neutral-200 dark:border-neutral-600">
+        <div className="pt-1 border-t border-neutral-200 dark:border-neutral-600 space-y-0.5">
           {point.violationLabels.map((label) => (
-            <p key={label} className="text-red-500 font-medium">{label}</p>
+            <p key={label} className="text-red-500 font-semibold">{label}</p>
           ))}
         </div>
       )}
@@ -168,13 +197,52 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: { payl
   );
 }
 
+// ---------------------------------------------------------------------------
+// Custom reference line label with opaque background
+// ---------------------------------------------------------------------------
+
+function RefLabel({
+  viewBox,
+  value,
+  color,
+}: {
+  viewBox?: { x?: number; y?: number; width?: number };
+  value: string;
+  color: string;
+}) {
+  const x = (viewBox?.x ?? 0) + (viewBox?.width ?? 0) - 2;
+  const y = viewBox?.y ?? 0;
+  const textWidth = value.length * 5.5 + 6;
+
+  return (
+    <g>
+      <rect
+        x={x - textWidth}
+        y={y - 9}
+        width={textWidth}
+        height={13}
+        fill="white"
+        fillOpacity={0.88}
+        rx={2}
+      />
+      <text x={x - 3} y={y + 2} textAnchor="end" fontSize={9} fill={color} fontWeight="600">
+        {value}
+      </text>
+    </g>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
 export function ControlChart({ analysis, chartType }: ControlChartProps) {
   const data = useMemo(() => buildChartData(analysis, chartType), [analysis, chartType]);
 
   if (data.length === 0) return null;
 
   const ucl = data[0]!.ucl;
-  const cl = data[0]!.cl;
+  const cl  = data[0]!.cl;
   const lcl = data[0]!.lcl;
 
   const padding = (ucl - lcl) * 0.15;
@@ -186,10 +254,11 @@ export function ControlChart({ analysis, chartType }: ControlChartProps) {
 
   return (
     <motion.div
-      className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-4 space-y-3"
+      className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-4 space-y-3 transition-shadow duration-200"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
+      whileHover={{ boxShadow: 'var(--shadow-card-hover)' }}
     >
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{title}</h3>
@@ -210,7 +279,7 @@ export function ControlChart({ analysis, chartType }: ControlChartProps) {
       </div>
 
       <ResponsiveContainer width="100%" height={240}>
-        <LineChart data={data} margin={{ top: 8, right: 16, bottom: 4, left: 8 }}>
+        <LineChart data={data} margin={{ top: 8, right: 56, bottom: 4, left: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
           <XAxis
             dataKey="index"
@@ -225,13 +294,31 @@ export function ControlChart({ analysis, chartType }: ControlChartProps) {
           />
           <Tooltip content={<CustomTooltip />} />
 
-          {/* Control limit reference lines */}
-          <ReferenceLine y={ucl} stroke="#ef4444" strokeDasharray="4 3" strokeWidth={1.5}
-            label={{ value: `UCL ${ucl.toFixed(3)}`, position: 'right', fontSize: 9, fill: '#ef4444' }} />
-          <ReferenceLine y={cl} stroke="#6b7280" strokeDasharray="2 2" strokeWidth={1.5}
-            label={{ value: `CL ${cl.toFixed(3)}`, position: 'right', fontSize: 9, fill: '#6b7280' }} />
-          <ReferenceLine y={lcl} stroke="#f97316" strokeDasharray="4 3" strokeWidth={1.5}
-            label={{ value: `LCL ${lcl.toFixed(3)}`, position: 'right', fontSize: 9, fill: '#f97316' }} />
+          {/* Control limit reference lines with opaque labels */}
+          <ReferenceLine
+            y={ucl}
+            stroke="#ef4444"
+            strokeDasharray="4 3"
+            strokeWidth={1.5}
+            strokeOpacity={0.6}
+            label={<RefLabel value={`UCL ${ucl.toFixed(3)}`} color="#ef4444" />}
+          />
+          <ReferenceLine
+            y={cl}
+            stroke="#3b82f6"
+            strokeDasharray="2 2"
+            strokeWidth={1.5}
+            strokeOpacity={0.7}
+            label={<RefLabel value={`CL ${cl.toFixed(3)}`} color="#3b82f6" />}
+          />
+          <ReferenceLine
+            y={lcl}
+            stroke="#ef4444"
+            strokeDasharray="4 3"
+            strokeWidth={1.5}
+            strokeOpacity={0.6}
+            label={<RefLabel value={`LCL ${lcl.toFixed(3)}`} color="#f97316" />}
+          />
 
           <Line
             type="linear"
@@ -241,7 +328,8 @@ export function ControlChart({ analysis, chartType }: ControlChartProps) {
             dot={<CustomDot />}
             activeDot={{ r: 6, fill: '#2563eb' }}
             isAnimationActive={true}
-            animationDuration={600}
+            animationDuration={800}
+            animationEasing="ease-out"
           />
         </LineChart>
       </ResponsiveContainer>
