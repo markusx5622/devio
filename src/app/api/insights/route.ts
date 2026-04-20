@@ -6,7 +6,7 @@ import type { AnalysisResult } from '@/lib/spc/types';
 // Minimal shape validation — enough to guard against malformed requests
 const AnalysisSchema = z
   .object({
-    chart: z.object({ type: z.enum(['xbar-r', 'xbar-s', 'i-mr']) }),
+    chart: z.object({ type: z.enum(['xbar-r', 'xbar-s', 'i-mr']) }).passthrough(),
     violations: z.array(
       z.object({
         rule: z.string(),
@@ -39,6 +39,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const insights = generateSpcReport(parsed.data as unknown as AnalysisResult);
-  return NextResponse.json({ ok: true, data: insights });
+  try {
+    const insights = generateSpcReport(parsed.data as unknown as AnalysisResult);
+    return NextResponse.json({ ok: true, data: insights });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Error al generar el informe SPC.';
+    return NextResponse.json({ ok: false, error: { message } }, { status: 500 });
+  }
 }
