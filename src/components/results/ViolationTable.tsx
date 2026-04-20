@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, ChevronUp, ChevronDown, AlertTriangle, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronUp, ChevronDown } from 'lucide-react';
 import type { Violation, ViolationRule } from '@/lib/spc/types';
 import { SpcTooltip } from '@/components/ui/SpcTooltip';
 
@@ -33,7 +33,7 @@ const RULE_DESCRIPTIONS: Record<ViolationRule, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// Types
+// Types and helpers
 // ---------------------------------------------------------------------------
 
 type SortKey = 'rule' | 'points' | 'severity';
@@ -43,15 +43,11 @@ function severity(v: Violation): number {
   return v.subgroupIndices.length;
 }
 
-function sortViolations(
-  violations: Violation[],
-  key: SortKey,
-  dir: SortDir,
-): Violation[] {
+function sortViolations(violations: Violation[], key: SortKey, dir: SortDir): Violation[] {
   const sign = dir === 'asc' ? 1 : -1;
   return [...violations].sort((a, b) => {
-    if (key === 'rule') return sign * a.rule.localeCompare(b.rule);
-    if (key === 'points') return sign * (a.subgroupIndices.length - b.subgroupIndices.length);
+    if (key === 'rule')     return sign * a.rule.localeCompare(b.rule);
+    if (key === 'points')   return sign * (a.subgroupIndices.length - b.subgroupIndices.length);
     if (key === 'severity') return sign * (severity(a) - severity(b));
     return 0;
   });
@@ -71,14 +67,16 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 function SeverityBadge({ points }: { points: number }) {
   if (points >= 6) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
-        <XCircle className="h-3 w-3" aria-hidden /> Alta
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
+        <span className="h-1.5 w-1.5 rounded-full bg-red-500 urgency-pulse shrink-0" aria-hidden />
+        Alta
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 text-xs font-medium text-orange-700 dark:text-orange-300">
-      <AlertTriangle className="h-3 w-3" aria-hidden /> Media
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 text-xs font-medium text-orange-700 dark:text-orange-300">
+      <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0" aria-hidden />
+      Media
     </span>
   );
 }
@@ -113,21 +111,21 @@ export function ViolationTable({ violations }: ViolationTableProps) {
     return {
       onClick: () => handleSort(key),
       role: 'button' as const,
-      'aria-sort': (sortKey === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none') as
-        | 'ascending'
-        | 'descending'
-        | 'none',
+      'aria-sort': (sortKey === key
+        ? sortDir === 'asc' ? 'ascending' : 'descending'
+        : 'none') as 'ascending' | 'descending' | 'none',
       className:
-        'px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide cursor-pointer select-none hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors',
+        'px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide cursor-pointer select-none hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors duration-100',
     };
   }
 
   return (
     <motion.div
-      className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 overflow-hidden"
+      className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 overflow-hidden transition-shadow duration-200"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.15 }}
+      whileHover={{ boxShadow: 'var(--shadow-card-hover)' }}
     >
       <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-700 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
@@ -174,55 +172,57 @@ export function ViolationTable({ violations }: ViolationTableProps) {
               </p>
             )}
             <div className="max-h-96 overflow-y-auto overflow-x-auto">
-            <table className="w-full text-sm" role="grid" aria-label="Tabla de violaciones de reglas Nelson">
-              <thead className="sticky top-0 bg-neutral-50 dark:bg-neutral-800 z-10">
-                <tr>
-                  <th {...headerProps('rule')}>
-                    <span className="inline-flex items-center gap-1">
-                      Regla <SortIcon active={sortKey === 'rule'} dir={sortDir} />
-                    </span>
-                  </th>
-                  {/* "Points" column hidden on mobile via hidden sm:table-cell */}
-                  <th {...headerProps('points')} className={headerProps('points').className + ' hidden sm:table-cell'}>
-                    <span className="inline-flex items-center gap-1">
-                      Puntos <SortIcon active={sortKey === 'points'} dir={sortDir} />
-                    </span>
-                  </th>
-                  <th {...headerProps('severity')}>
-                    <span className="inline-flex items-center gap-1">
-                      Severidad <SortIcon active={sortKey === 'severity'} dir={sortDir} />
-                    </span>
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide hidden md:table-cell">
-                    Descripción
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700/50">
-                {sorted.map((v, i) => (
-                  <motion.tr
-                    key={`${v.rule}-${i}`}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.04 }}
-                    className="hover:bg-neutral-50 dark:hover:bg-neutral-700/20 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-semibold text-neutral-700 dark:text-neutral-200 whitespace-nowrap">
-                      <SpcTooltip term={RULE_NAMES[v.rule]}>{RULE_NAMES[v.rule]}</SpcTooltip>
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-neutral-500 dark:text-neutral-400 hidden sm:table-cell">
-                      {v.subgroupIndices.map((idx) => idx + 1).join(', ')}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <SeverityBadge points={v.subgroupIndices.length} />
-                    </td>
-                    <td className="px-4 py-3 text-xs text-neutral-500 dark:text-neutral-400 hidden md:table-cell max-w-sm">
-                      {RULE_DESCRIPTIONS[v.rule]}
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
+              <table className="w-full text-sm" role="grid" aria-label="Tabla de violaciones de reglas Nelson">
+                <thead className="sticky top-0 bg-neutral-50 dark:bg-neutral-800 z-10">
+                  <tr>
+                    <th {...headerProps('rule')}>
+                      <span className="inline-flex items-center gap-1">
+                        Regla <SortIcon active={sortKey === 'rule'} dir={sortDir} />
+                      </span>
+                    </th>
+                    <th
+                      {...headerProps('points')}
+                      className={headerProps('points').className + ' hidden sm:table-cell'}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        Puntos <SortIcon active={sortKey === 'points'} dir={sortDir} />
+                      </span>
+                    </th>
+                    <th {...headerProps('severity')}>
+                      <span className="inline-flex items-center gap-1">
+                        Severidad <SortIcon active={sortKey === 'severity'} dir={sortDir} />
+                      </span>
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide hidden md:table-cell">
+                      Descripción
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700/50">
+                  {sorted.map((v, i) => (
+                    <motion.tr
+                      key={`${v.rule}-${i}`}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05, duration: 0.3 }}
+                      className="hover:bg-neutral-50 dark:hover:bg-neutral-700/20 transition-colors duration-100 cursor-default"
+                    >
+                      <td className="px-4 py-3 font-semibold text-neutral-700 dark:text-neutral-200 whitespace-nowrap">
+                        <SpcTooltip term={RULE_NAMES[v.rule]}>{RULE_NAMES[v.rule]}</SpcTooltip>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-neutral-500 dark:text-neutral-400 hidden sm:table-cell tabular-nums">
+                        {v.subgroupIndices.map((idx) => idx + 1).join(', ')}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <SeverityBadge points={v.subgroupIndices.length} />
+                      </td>
+                      <td className="px-4 py-3 text-xs text-neutral-500 dark:text-neutral-400 hidden md:table-cell max-w-sm">
+                        {RULE_DESCRIPTIONS[v.rule]}
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </motion.div>
         )}
