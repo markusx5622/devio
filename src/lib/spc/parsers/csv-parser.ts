@@ -25,6 +25,7 @@ export function parseCsv(csv: string): Result<ParsedTable, SpcError> {
     skipEmptyLines: true,
     dynamicTyping: false,
     delimiter: '',       // auto-detect
+    comments: '#',       // skip lines starting with #
     transformHeader: (h) => h.trim(),
     transform: (v) => v.trim(),
   });
