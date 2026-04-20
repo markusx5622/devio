@@ -1,0 +1,38 @@
+[
+  {
+    "id": "proceso-estable",
+    "filename": "proceso-estable.csv",
+    "label": "Proceso estable",
+    "description": "Proceso bajo control estadístico, sin violaciones de Nelson. Cpk ≈ 1.45.",
+    "chartType": "xbar-r",
+    "badge": "stable",
+    "specLimits": { "usl": 10.8, "lsl": 9.2 }
+  },
+  {
+    "id": "proceso-deriva",
+    "filename": "proceso-deriva.csv",
+    "label": "Proceso con deriva",
+    "description": "Deriva lineal creciente desde la fila 15. Viola Reglas Nelson 2 y 3.",
+    "chartType": "xbar-r",
+    "badge": "drift",
+    "specLimits": { "usl": 11.5, "lsl": 9.2 }
+  },
+  {
+    "id": "causa-asignable",
+    "filename": "causa-asignable.csv",
+    "label": "Causa asignable",
+    "description": "Proceso estable con spike brusco en filas 18–20. Viola Regla Nelson 1.",
+    "chartType": "xbar-r",
+    "badge": "spike",
+    "specLimits": { "usl": 10.8, "lsl": 9.2 }
+  },
+  {
+    "id": "fuera-especificacion",
+    "filename": "fuera-especificacion.csv",
+    "label": "Fuera de especificación",
+    "description": "Alta variabilidad con carta I-MR. Proceso incapaz, Cpk ≈ 0.65.",
+    "chartType": "imr",
+    "badge": "incapable",
+    "specLimits": { "usl": 11.2, "lsl": 9.2 }
+  }
+]

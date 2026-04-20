@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, ChevronUp, ChevronDown, AlertTriangle, XCircle } from 'lucide-react';
 import type { Violation, ViolationRule } from '@/lib/spc/types';
+import { SpcTooltip } from '@/components/ui/SpcTooltip';
 
 // ---------------------------------------------------------------------------
 // Static data
@@ -154,10 +155,10 @@ export function ViolationTable({ violations }: ViolationTableProps) {
           >
             <CheckCircle2 className="h-10 w-10 text-green-400" aria-hidden />
             <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
-              No se detectaron violaciones
+              Proceso bajo control estadístico — Sin violaciones detectadas
             </p>
             <p className="text-xs text-neutral-400 max-w-xs">
-              El proceso está bajo control estadístico según las 8 reglas de Nelson.
+              Las 8 reglas de Nelson no detectaron ningún patrón no aleatorio en el proceso.
             </p>
           </motion.div>
         ) : (
@@ -202,7 +203,7 @@ export function ViolationTable({ violations }: ViolationTableProps) {
                     className="hover:bg-neutral-50 dark:hover:bg-neutral-700/20 transition-colors"
                   >
                     <td className="px-4 py-3 font-semibold text-neutral-700 dark:text-neutral-200 whitespace-nowrap">
-                      {RULE_NAMES[v.rule]}
+                      <SpcTooltip term={RULE_NAMES[v.rule]}>{RULE_NAMES[v.rule]}</SpcTooltip>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-neutral-500 dark:text-neutral-400 hidden sm:table-cell">
                       {v.subgroupIndices.map((idx) => idx + 1).join(', ')}

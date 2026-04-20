@@ -73,15 +73,30 @@ function StatusBadge({ status }: { status: SpcInsights['processStatus'] }) {
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-4 animate-pulse">
-      <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4" />
-      <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2" />
-      <div className="space-y-2 mt-4">
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+          Generando informe Six Sigma con IA
+        </p>
+        <span className="flex gap-0.5">
+          {[0, 1, 2].map((i) => (
+            <motion.span
+              key={i}
+              className="inline-block w-1 h-1 rounded-full bg-blue-500"
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.3 }}
+            />
+          ))}
+        </span>
+      </div>
+      <div className="space-y-2 animate-pulse">
+        <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4" />
+        <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2" />
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-16 bg-neutral-100 dark:bg-neutral-800 rounded-lg" />
         ))}
+        <div className="h-24 bg-neutral-100 dark:bg-neutral-800 rounded-lg" />
       </div>
-      <div className="h-24 bg-neutral-100 dark:bg-neutral-800 rounded-lg mt-4" />
     </div>
   );
 }

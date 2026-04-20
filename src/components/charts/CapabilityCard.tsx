@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import type { ProcessCapability, SpecLimits } from '@/lib/spc/types';
 import type { CapabilityCategory } from '@/lib/spc/capability';
+import { SpcTooltip } from '@/components/ui/SpcTooltip';
 
 const CATEGORY_CONFIG: Record<
   CapabilityCategory,
@@ -48,7 +49,7 @@ function CapBadge({ value }: { value: number | undefined }) {
   );
 }
 
-function IndexRow({ label, value, description }: { label: string; value: number | undefined; description: string }) {
+function IndexRow({ label, value, description }: { label: React.ReactNode; value: number | undefined; description: string }) {
   return (
     <div className="flex items-center justify-between py-2 border-b border-neutral-100 dark:border-neutral-700/50 last:border-0">
       <div>
@@ -140,10 +141,10 @@ export function CapabilityCard({ capability, values, specLimits }: CapabilityCar
       )}
 
       <div>
-        <IndexRow label="Cp" value={capability.cp} description="Capacidad potencial a corto plazo (tolerancia / 6σ̂)" />
-        <IndexRow label="Cpk" value={capability.cpk} description="Capacidad real a corto plazo (considera centrado)" />
-        <IndexRow label="Pp" value={capability.pp} description="Desempeño potencial a largo plazo" />
-        <IndexRow label="Ppk" value={capability.ppk} description="Desempeño real a largo plazo (considera centrado)" />
+        <IndexRow label={<SpcTooltip term="Cp">Cp</SpcTooltip>} value={capability.cp} description="Capacidad potencial a corto plazo (tolerancia / 6σ̂)" />
+        <IndexRow label={<SpcTooltip term="Cpk">Cpk</SpcTooltip>} value={capability.cpk} description="Capacidad real a corto plazo (considera centrado)" />
+        <IndexRow label={<SpcTooltip term="Pp">Pp</SpcTooltip>} value={capability.pp} description="Desempeño potencial a largo plazo" />
+        <IndexRow label={<SpcTooltip term="Ppk">Ppk</SpcTooltip>} value={capability.ppk} description="Desempeño real a largo plazo (considera centrado)" />
       </div>
 
       {histogram.length > 0 && (
