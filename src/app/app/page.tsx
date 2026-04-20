@@ -2,9 +2,10 @@
 
 import { useCallback, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { RefreshCw, RotateCcw } from 'lucide-react';
-import type { AnalysisResult, SpecLimits } from '@/lib/spc/types';
+import { RotateCcw, SlidersHorizontal, X } from 'lucide-react';
+import type { AnalysisResult, ProcessCapability } from '@/lib/spc/types';
 import { allValues } from '@/lib/spc/stats';
+import { computeCapability } from '@/lib/spc/capability';
 import { UploadDropzone } from '@/components/upload/UploadDropzone';
 import { ControlChart } from '@/components/charts/ControlChart';
 import { CapabilityCard } from '@/components/charts/CapabilityCard';
@@ -22,15 +23,89 @@ function extractValues(analysis: AnalysisResult): readonly number[] {
   return allValues(chart.subgroups);
 }
 
-function extractSpecLimits(analysis: AnalysisResult): SpecLimits | undefined {
-  return analysis.capability ? undefined : undefined; // spec limits not stored in result
-}
-
 function chartLabel(analysis: AnalysisResult): string {
   const { chart } = analysis;
   if (chart.type === 'xbar-r') return 'X̄-R';
   if (chart.type === 'xbar-s') return 'X̄-S';
   return 'I-MR';
+}
+
+// ---------------------------------------------------------------------------
+// Spec limits modal
+// ---------------------------------------------------------------------------
+
+function SpecLimitsModal({
+  onClose,
+  onAdd,
+}: {
+  onClose: () => void;
+  onAdd: (usl: number, lsl: number) => void;
+}) {
+  const [usl, setUsl] = useState('');
+  const [lsl, setLsl] = useState('');
+  const [err, setErr] = useState('');
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const u = parseFloat(usl);
+    const l = parseFloat(lsl);
+    if (isNaN(u) || isNaN(l)) { setErr('Introduce valores numéricos válidos.'); return; }
+    if (u <= l) { setErr('USL debe ser mayor que LSL.'); return; }
+    onAdd(u, l);
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.18 }}
+        className="relative bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 shadow-xl p-6 w-full max-w-sm mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button type="button" onClick={onClose} className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">
+          <X className="h-4 w-4" aria-hidden />
+        </button>
+        <h2 className="text-base font-semibold text-neutral-800 dark:text-neutral-100 mb-1">Añadir límites de especificación</h2>
+        <p className="text-xs text-neutral-500 mb-4">Introduce USL y LSL para calcular Cp, Cpk, Pp y Ppk.</p>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-1">USL (Límite Superior de Especificación)</label>
+            <input
+              type="number"
+              step="any"
+              value={usl}
+              onChange={(e) => { setUsl(e.target.value); setErr(''); }}
+              placeholder="Ej: 10.8"
+              className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 px-3 py-2 text-sm text-neutral-800 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-1">LSL (Límite Inferior de Especificación)</label>
+            <input
+              type="number"
+              step="any"
+              value={lsl}
+              onChange={(e) => { setLsl(e.target.value); setErr(''); }}
+              placeholder="Ej: 9.2"
+              className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 px-3 py-2 text-sm text-neutral-800 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          {err && <p className="text-xs text-red-500">{err}</p>}
+          <button
+            type="submit"
+            className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          >
+            Calcular capacidad
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -74,9 +149,18 @@ function SummaryStrip({ analysis }: { analysis: AnalysisResult }) {
 // Results grid
 // ---------------------------------------------------------------------------
 
-function ResultsGrid({ analysis }: { analysis: AnalysisResult }) {
+function ResultsGrid({
+  analysis,
+  extraCapability,
+  onAddSpecLimits,
+}: {
+  analysis: AnalysisResult;
+  extraCapability: ProcessCapability | null;
+  onAddSpecLimits: () => void;
+}) {
   const { chart } = analysis;
   const rawValues = extractValues(analysis);
+  const capability = analysis.capability ?? extraCapability ?? null;
 
   return (
     <div className="space-y-6">
@@ -105,22 +189,27 @@ function ResultsGrid({ analysis }: { analysis: AnalysisResult }) {
 
       {/* Capability + Violations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {analysis.capability ? (
+        {capability ? (
           <section aria-label="Capacidad del proceso">
-            <CapabilityCard
-              capability={analysis.capability}
-              values={rawValues}
-            />
+            <CapabilityCard capability={capability} values={rawValues} />
           </section>
         ) : (
           <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-700 p-6 flex items-center justify-center text-center">
-            <div>
+            <div className="space-y-3">
               <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
                 Índices de capacidad no disponibles
               </p>
-              <p className="text-xs text-neutral-400 mt-1 max-w-xs">
-                Proporciona USL y LSL en la carga del archivo para calcular Cp, Cpk, Pp y Ppk.
+              <p className="text-xs text-neutral-400 max-w-xs">
+                Introduce límites de especificación (USL/LSL) en el análisis para calcular Cp y Cpk.
               </p>
+              <button
+                type="button"
+                onClick={onAddSpecLimits}
+                className="no-print inline-flex items-center gap-2 rounded-lg border border-blue-300 dark:border-blue-700 px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
+                Añadir límites
+              </button>
             </div>
           </div>
         )}
@@ -147,16 +236,26 @@ type PageState = 'upload' | 'results';
 export default function DashboardPage() {
   const [pageState, setPageState] = useState<PageState>('upload');
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [extraCapability, setExtraCapability] = useState<ProcessCapability | null>(null);
+  const [showSpecModal, setShowSpecModal] = useState(false);
 
   const handleSuccess = useCallback((result: AnalysisResult) => {
     setAnalysis(result);
+    setExtraCapability(null);
     setPageState('results');
   }, []);
 
   const handleReset = useCallback(() => {
     setAnalysis(null);
+    setExtraCapability(null);
     setPageState('upload');
   }, []);
+
+  const handleAddSpecLimits = useCallback((usl: number, lsl: number) => {
+    if (!analysis) return;
+    const result = computeCapability(analysis.chart, { usl, lsl });
+    if (result.ok) setExtraCapability(result.value);
+  }, [analysis]);
 
   return (
     <div className="space-y-6">
@@ -209,8 +308,21 @@ export default function DashboardPage() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.35 }}
           >
-            <ResultsGrid analysis={analysis} />
+            <ResultsGrid
+              analysis={analysis}
+              extraCapability={extraCapability}
+              onAddSpecLimits={() => setShowSpecModal(true)}
+            />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showSpecModal && (
+          <SpecLimitsModal
+            onClose={() => setShowSpecModal(false)}
+            onAdd={handleAddSpecLimits}
+          />
         )}
       </AnimatePresence>
     </div>

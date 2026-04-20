@@ -155,10 +155,10 @@ export function ViolationTable({ violations }: ViolationTableProps) {
           >
             <CheckCircle2 className="h-10 w-10 text-green-400" aria-hidden />
             <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
-              No se detectaron violaciones
+              Proceso bajo control estadístico — Sin violaciones detectadas
             </p>
             <p className="text-xs text-neutral-400 max-w-xs">
-              El proceso está bajo control estadístico según las 8 reglas de Nelson.
+              Las 8 reglas de Nelson no detectaron ningún patrón no aleatorio en el proceso.
             </p>
           </motion.div>
         ) : (
