@@ -10,6 +10,7 @@ import { ControlChart } from '@/components/charts/ControlChart';
 import { CapabilityCard } from '@/components/charts/CapabilityCard';
 import { ViolationTable } from '@/components/results/ViolationTable';
 import { InsightsPanel } from '@/components/ai/InsightsPanel';
+import { ExportButton } from '@/components/results/ExportButton';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -170,16 +171,19 @@ export default function DashboardPage() {
           </p>
         </div>
         {pageState === 'results' && (
-          <motion.button
-            type="button"
-            onClick={handleReset}
-            className="flex items-center gap-2 rounded-lg border border-neutral-300 dark:border-neutral-600 px-4 py-2 text-sm text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 transition-colors"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden />
-            Nuevo análisis
-          </motion.button>
+          <div className="no-print flex items-center gap-2">
+            <ExportButton />
+            <motion.button
+              type="button"
+              onClick={handleReset}
+              className="flex items-center gap-2 rounded-lg border border-neutral-300 dark:border-neutral-600 px-4 py-2 text-sm text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 transition-colors"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden />
+              Nuevo análisis
+            </motion.button>
+          </div>
         )}
       </div>
 
@@ -191,7 +195,7 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3 }}
-            className="max-w-2xl mx-auto"
+            className="max-w-2xl mx-auto no-print"
           >
             <UploadDropzone onSuccess={handleSuccess} />
           </motion.div>

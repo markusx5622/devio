@@ -16,3 +16,56 @@ body {
   background: var(--color-background);
   color: var(--color-foreground);
 }
+
+/* ---------------------------------------------------------------------------
+   Print styles — used by ExportButton (window.print())
+   --------------------------------------------------------------------------- */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt;
+  }
+
+  /* Page header with report title */
+  body::before {
+    content: 'Devio — Informe SPC';
+    display: block;
+    font-size: 18pt;
+    font-weight: bold;
+    margin-bottom: 4pt;
+  }
+
+  /* Recharts SVG elements */
+  svg {
+    max-width: 100%;
+  }
+
+  /* Force white backgrounds on chart cards */
+  [class*="bg-white"],
+  [class*="bg-neutral-800"] {
+    background: #fff !important;
+    border: 1px solid #ccc !important;
+  }
+
+  /* Page breaks between main sections */
+  section {
+    page-break-inside: avoid;
+  }
+
+  section + section {
+    page-break-before: auto;
+  }
+
+  /* Hide animations / interactive chrome */
+  header,
+  footer,
+  nav {
+    display: none !important;
+  }
+}
