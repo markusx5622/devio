@@ -6,6 +6,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["@testing-library/jest-dom/vitest"],
     globals: true,
+    exclude: ['node_modules', 'tests/e2e/**'],
   },
   resolve: {
     alias: {

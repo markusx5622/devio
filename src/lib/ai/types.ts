@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
-// SpcInsights — structured AI response
+// SpcInsights — structured SPC analysis response
 // ---------------------------------------------------------------------------
 
 const ViolationInsightSchema = z.object({
@@ -34,12 +34,3 @@ export const SpcInsightsSchema = z.object({
 });
 
 export type SpcInsights = z.infer<typeof SpcInsightsSchema>;
-
-// ---------------------------------------------------------------------------
-// AiError
-// ---------------------------------------------------------------------------
-
-export type AiError = {
-  code: 'API_ERROR' | 'PARSE_ERROR' | 'TIMEOUT' | 'RATE_LIMITED';
-  message: string;
-};
