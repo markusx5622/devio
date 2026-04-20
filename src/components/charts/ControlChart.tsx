@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { SpcTooltip } from '@/components/ui/SpcTooltip';
 import {
   LineChart,
   Line,
@@ -201,6 +202,11 @@ export function ControlChart({ analysis, chartType }: ControlChartProps) {
             Bajo control
           </span>
         )}
+      </div>
+      <div className="flex gap-4 text-xs text-neutral-500 dark:text-neutral-400">
+        <span className="text-red-500"><SpcTooltip term="UCL">UCL</SpcTooltip> {ucl.toFixed(3)}</span>
+        <span className="text-neutral-400"><SpcTooltip term="CL">CL</SpcTooltip> {cl.toFixed(3)}</span>
+        <span className="text-orange-500"><SpcTooltip term="LCL">LCL</SpcTooltip> {lcl.toFixed(3)}</span>
       </div>
 
       <ResponsiveContainer width="100%" height={240}>
