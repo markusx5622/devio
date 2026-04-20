@@ -1,49 +1,118 @@
-# Devio
+# Devio — Control Estadístico de Procesos
 
-> Statistical Process Control analysis for the rest of us.
+> Herramienta de análisis SPC para ingenieros de calidad.
+> Sube tus datos de proceso, obtén cartas de control,
+> detección de causas asignables y un informe DMAIC
+> completo — sin configuración, sin API keys.
 
+[![Deploy](https://img.shields.io/badge/deploy-vercel-black?logo=vercel)](https://devio.vercel.app)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-125_passing-green)](./src)
+[![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 
-Devio is a web application that brings Statistical Process Control (SPC) analysis to manufacturing and quality engineers without requiring specialist software. Upload your process measurement data as a CSV or Excel file and instantly receive control charts, rule-violation detection, process capability indices (Cp, Cpk, Pp, Ppk), and AI-generated Six Sigma DMAIC reports.
+## Demo en vivo
 
-Built on Next.js 15 and deployed on Vercel, Devio runs entirely in the browser and on serverless functions — no database, no login, no installation required. The statistical engine is written in pure TypeScript, following the formulas and constants documented in Montgomery's *Introduction to Statistical Quality Control*.
+**[devio.vercel.app](https://devio.vercel.app)** — Sin registro, sin API key.
 
-## Development
+Carga uno de los 4 escenarios de demo incluidos y ve el análisis en segundos.
 
-```bash
-# Install dependencies
-pnpm install
+## Qué hace
 
-# Start the development server
-pnpm dev
+Devio implementa desde cero el motor de Control Estadístico de Procesos:
 
-# Run tests
-pnpm test
+- **Cartas de control** X̄-R, X̄-S e I-MR con límites UCL/CL/LCL calculados
+- **Detección de las 8 reglas de Nelson** para identificar causas asignables
+- **Índices de capacidad** Cp, Cpk, Pp y Ppk con interpretación categórica
+- **Informe DMAIC determinístico** — análisis Six Sigma completo sin IA generativa
+- **4 escenarios de demo** — proceso estable, deriva, causa asignable y proceso incapaz
+- **Export a PDF** del informe completo
 
-# Build for production
-pnpm build
+## Stack técnico
 
-# Lint
-pnpm lint
+| Capa | Tecnología |
+|------|-----------|
+| Framework | Next.js 15 App Router |
+| Lenguaje | TypeScript 5 strict |
+| Motor SPC | Implementación propia (zero dependencias externas) |
+| Gráficos | Recharts |
+| Animaciones | Framer Motion v12 |
+| Estilos | Tailwind CSS v4 |
+| Tests | Vitest + Testing Library |
+| Tests E2E | Playwright |
+| Deploy | Vercel |
+
+## Arquitectura
+
+```
+src/
+├── lib/
+│   ├── spc/              # Motor estadístico puro (zero framework)
+│   │   ├── parsers/      # CSV y XLSX → ParsedData
+│   │   ├── stats/        # Funciones estadísticas base
+│   │   ├── charts/       # Calculadores X̄-R, X̄-S, I-MR
+│   │   ├── rules/        # Detector 8 reglas de Nelson
+│   │   ├── capability/   # Cp, Cpk, Pp, Ppk
+│   │   └── analyze.ts    # Orquestador principal
+│   └── analysis/
+│       └── interpreter.ts # Informe DMAIC determinístico
+├── components/           # React components
+│   ├── charts/           # ControlChart, CapabilityCard
+│   ├── results/          # ViolationTable, ExportButton
+│   ├── upload/           # UploadDropzone
+│   └── ai/               # InsightsPanel (análisis determinístico)
+└── app/
+    ├── api/analyze/      # POST /api/analyze
+    ├── api/insights/     # POST /api/insights
+    └── app/              # Dashboard principal
 ```
 
-## Project phases
+El motor SPC (`src/lib/spc/`) es framework-agnostic:
+funciones puras, sin I/O, sin side effects.
+Puede usarse independientemente de Next.js.
 
-| Phase | Description |
-|-------|-------------|
-| **Phase 0** | Repository bootstrap, developer ergonomics, CI basics |
-| **Phase 1** | SPC architecture: domain types, algorithm interfaces, `docs/ARCHITECTURE.md` |
-| **Phase 2** | Statistical engine: parsers, stats utilities, chart calculators, violation rules, capability indices |
-| **Phase 3** | Dashboard UI: upload flow, chart components, capability cards, report preview |
-| **Phase 4** | AI layer: Claude integration for DMAIC reports and natural-language insights |
-| **Phase 5** | Polish: microcopy, tooltips, demo datasets, Playwright end-to-end tests |
-| **Phase 6** | Deploy: Vercel project, custom domain, analytics, final README pass |
+## Desarrollo local
 
-See [AGENTS.md](AGENTS.md) for the full specification and governance rules for this repository.
+```bash
+# Clonar e instalar
+git clone https://github.com/markusx5622/devio.git
+cd devio
+pnpm install
 
-## License
+# Variables de entorno (opcional)
+cp .env.example .env.local
 
-This project is licensed under the [MIT License](LICENSE). Copyright 2026 M&C Web Solutions.
+# Servidor de desarrollo
+pnpm dev          # http://localhost:3000
+
+# Tests
+pnpm test         # Vitest unit tests
+pnpm test:e2e     # Playwright e2e tests
+
+# Build de producción
+pnpm build
+```
+
+## Datasets de demo incluidos
+
+| Escenario | Descripción | Violaciones esperadas |
+|-----------|-------------|----------------------|
+| Proceso estable | 30 subgrupos × n=5, Cpk≈1.45 | Ninguna |
+| Proceso con deriva | Deriva lineal desde subgrupo 15 | Nelson R2, R3 |
+| Causa asignable | Spike brusco en subgrupos 18-20 | Nelson R1 |
+| Fuera de especificación | Alta variabilidad, Cpk≈0.65 | Múltiples |
+
+## Por qué este proyecto
+
+Construido como proyecto personal durante los estudios de
+Ingeniería en Organización Industrial en la Universidad Europea
+de Valencia. El objetivo era implementar las técnicas SPC
+estudiadas en clase como software real y funcional.
+
+Todo el motor estadístico está implementado desde cero
+siguiendo Montgomery, *Introduction to Statistical Quality
+Control* (7ª ed.) como referencia bibliográfica.
+
+## Licencia
+
+MIT © 2026 M&C Web Solutions
