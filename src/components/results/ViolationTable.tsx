@@ -167,10 +167,15 @@ export function ViolationTable({ violations }: ViolationTableProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="overflow-x-auto"
           >
+            {violations.length > 4 && (
+              <p className="px-4 pt-2 pb-1 text-xs text-neutral-400 dark:text-neutral-500">
+                {violations.length} violaciones detectadas · Desplázate para ver todas
+              </p>
+            )}
+            <div className="max-h-96 overflow-y-auto overflow-x-auto">
             <table className="w-full text-sm" role="grid" aria-label="Tabla de violaciones de reglas Nelson">
-              <thead className="bg-neutral-50 dark:bg-neutral-700/40">
+              <thead className="sticky top-0 bg-neutral-50 dark:bg-neutral-800 z-10">
                 <tr>
                   <th {...headerProps('rule')}>
                     <span className="inline-flex items-center gap-1">
@@ -218,6 +223,7 @@ export function ViolationTable({ violations }: ViolationTableProps) {
                 ))}
               </tbody>
             </table>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
