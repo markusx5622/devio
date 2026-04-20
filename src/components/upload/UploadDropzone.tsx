@@ -1,13 +1,39 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { UploadCloud, FileText, AlertCircle, Loader2, PlayCircle } from 'lucide-react';
+import {
+  UploadCloud,
+  FileText,
+  AlertCircle,
+  Loader2,
+  PlayCircle,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
+  TrendingUp,
+  Zap,
+  AlertTriangle,
+} from 'lucide-react';
 import type { AnalysisResult } from '@/lib/spc/types';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface ParsedPreview {
   headers: string[];
   rows: string[][];
+}
+
+interface DemoScenario {
+  id: string;
+  filename: string;
+  label: string;
+  description: string;
+  chartType: string;
+  badge: 'stable' | 'drift' | 'spike' | 'incapable';
+  specLimits?: { usl: number; lsl: number };
 }
 
 interface UploadDropzoneProps {
@@ -16,16 +42,131 @@ interface UploadDropzoneProps {
 
 type UploadState = 'idle' | 'dragging' | 'preview' | 'loading' | 'error';
 
+// ---------------------------------------------------------------------------
+// Badge config
+// ---------------------------------------------------------------------------
+
+const BADGE_CONFIG: Record<
+  DemoScenario['badge'],
+  { label: string; icon: React.ElementType; className: string }
+> = {
+  stable: {
+    label: 'Estable',
+    icon: CheckCircle2,
+    className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+  },
+  drift: {
+    label: 'Deriva',
+    icon: TrendingUp,
+    className: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300',
+  },
+  spike: {
+    label: 'Violaciones',
+    icon: Zap,
+    className: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
+  },
+  incapable: {
+    label: 'Incapaz',
+    icon: AlertTriangle,
+    className: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Demo selector sub-component
+// ---------------------------------------------------------------------------
+
+function DemoSelector({
+  onLoad,
+  disabled,
+}: {
+  onLoad: (scenario: DemoScenario) => void;
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [scenarios, setScenarios] = useState<DemoScenario[]>([]);
+
+  useEffect(() => {
+    fetch('/demo/index.json')
+      .then((r) => r.json())
+      .then((data: DemoScenario[]) => setScenarios(data))
+      .catch(() => {/* silently ignore */});
+  }, []);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className="flex items-center gap-2 rounded-lg border border-neutral-300 dark:border-neutral-600 px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 transition-colors disabled:opacity-40"
+      >
+        <FileText className="h-4 w-4" aria-hidden />
+        Cargar ejemplo
+        {open ? <ChevronUp className="h-3.5 w-3.5" aria-hidden /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden />}
+      </button>
+
+      <AnimatePresence>
+        {open && scenarios.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+            className="absolute bottom-full mb-2 left-0 z-50 w-72 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-lg overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="px-4 py-2.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-100 dark:border-neutral-700">
+              Selecciona un escenario
+            </p>
+            <div className="divide-y divide-neutral-100 dark:divide-neutral-700/50">
+              {scenarios.map((s) => {
+                const cfg = BADGE_CONFIG[s.badge];
+                const Icon = cfg.icon;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => { setOpen(false); onLoad(s); }}
+                    className="w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+                        {s.label}
+                      </span>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.className}`}>
+                        <Icon className="h-3 w-3" aria-hidden />
+                        {cfg.label}
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-400 leading-relaxed">{s.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
 export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
   const [state, setState] = useState<UploadState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<ParsedPreview | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [pendingScenario, setPendingScenario] = useState<DemoScenario | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const parseCsvPreview = useCallback((text: string): ParsedPreview => {
-    const lines = text.trim().split('\n').slice(0, 6); // header + 5 rows
-    const delimiter = text.includes(';') && !text.includes(',') ? ';' : ',';
+    const nonComment = text.split('\n').filter((l) => !l.trim().startsWith('#'));
+    const lines = nonComment.slice(0, 6);
+    const delimiter = lines[0]?.includes(';') && !lines[0]?.includes(',') ? ';' : ',';
     const headers = lines[0]?.split(delimiter).map((h) => h.trim()) ?? [];
     const rows = lines.slice(1).map((l) => l.split(delimiter).map((c) => c.trim()));
     return { headers, rows };
@@ -34,7 +175,6 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
   const loadFile = useCallback(
     async (f: File) => {
       setFile(f);
-      // Only preview CSV inline; XLSX just show filename
       if (f.name.toLowerCase().endsWith('.csv')) {
         const text = await f.text();
         setPreview(parseCsvPreview(text));
@@ -58,6 +198,7 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
         setError('Solo se aceptan archivos CSV o Excel (.xlsx). Por favor sube un archivo válido.');
         return;
       }
+      setPendingScenario(null);
       loadFile(dropped);
     },
     [loadFile],
@@ -66,17 +207,21 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
   const handleFileInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const picked = e.target.files?.[0];
-      if (picked) loadFile(picked);
+      if (picked) { setPendingScenario(null); loadFile(picked); }
     },
     [loadFile],
   );
 
-  const loadDemo = useCallback(async () => {
-    const res = await fetch('/demo/sample-data.csv');
-    const text = await res.text();
-    const demoFile = new File([text], 'sample-data.csv', { type: 'text/csv' });
-    loadFile(demoFile);
-  }, [loadFile]);
+  const loadScenario = useCallback(
+    async (scenario: DemoScenario) => {
+      setPendingScenario(scenario);
+      const res = await fetch(`/demo/${scenario.filename}`);
+      const text = await res.text();
+      const demoFile = new File([text], scenario.filename, { type: 'text/csv' });
+      await loadFile(demoFile);
+    },
+    [loadFile],
+  );
 
   const runAnalysis = useCallback(async () => {
     if (!file) return;
@@ -85,7 +230,11 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
 
     const body = new FormData();
     body.append('file', file);
-    body.append('analysisType', 'auto');
+    body.append('analysisType', pendingScenario?.chartType === 'imr' ? 'imr' : 'auto');
+    if (pendingScenario?.specLimits) {
+      body.append('usl', String(pendingScenario.specLimits.usl));
+      body.append('lsl', String(pendingScenario.specLimits.lsl));
+    }
 
     try {
       const res = await fetch('/api/analyze', { method: 'POST', body });
@@ -102,15 +251,16 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
       onSuccess(json.data);
     } catch {
       setState('error');
-      setError('No se pudo conectar con el servidor. Verifica tu conexión e inténtalo de nuevo.');
+      setError('Error al procesar el archivo. Comprueba el formato e inténtalo de nuevo.');
     }
-  }, [file, onSuccess]);
+  }, [file, onSuccess, pendingScenario]);
 
   const reset = useCallback(() => {
     setState('idle');
     setFile(null);
     setPreview(null);
     setError(null);
+    setPendingScenario(null);
     if (inputRef.current) inputRef.current.value = '';
   }, []);
 
@@ -129,11 +279,11 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
                 : 'border-neutral-300 dark:border-neutral-600 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/10',
         ].join(' ')}
         onDragOver={(e) => { e.preventDefault(); setState('dragging'); }}
-        onDragLeave={() => setState(file ? 'preview' : 'idle')}
+        onDragLeave={() => { setState(file ? 'preview' : 'idle'); }}
         onDrop={handleDrop}
-        onClick={() => state !== 'loading' && inputRef.current?.click()}
+        onClick={() => { if (state !== 'loading') inputRef.current?.click(); }}
         role="button"
-        aria-label="Arrastra un archivo CSV o Excel aquí, o haz clic para seleccionar"
+        aria-label="Arrastra tu archivo CSV o Excel aquí, o haz clic para seleccionar"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
@@ -170,12 +320,18 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
 
           <AnimatePresence mode="wait">
             {state === 'loading' ? (
-              <motion.div key="loading-text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
-                {/* Skeleton lines */}
-                {[80, 60, 70].map((w, i) => (
-                  <div key={i} className={`h-3 rounded bg-neutral-200 dark:bg-neutral-700 animate-pulse`} style={{ width: `${w}%` }} />
-                ))}
-                <p className="text-sm text-neutral-500 mt-2">Analizando datos…</p>
+              <motion.div key="loading-text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-1.5">
+                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">Analizando proceso…</p>
+                <div className="flex justify-center gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      className="h-1.5 w-1.5 rounded-full bg-blue-500"
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.3 }}
+                    />
+                  ))}
+                </div>
               </motion.div>
             ) : state === 'error' ? (
               <motion.div key="error-text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -191,14 +347,17 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
             ) : state === 'preview' ? (
               <motion.div key="preview-text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full" onClick={(e) => e.stopPropagation()}>
                 <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-200 truncate max-w-xs mx-auto">{file?.name}</p>
-                <p className="text-xs text-neutral-400 mt-0.5">Haz clic en &ldquo;Analizar&rdquo; para continuar</p>
+                {pendingScenario && (
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">{pendingScenario.label}</p>
+                )}
+                <p className="text-xs text-neutral-400 mt-0.5">Haz clic en «Analizar» para continuar</p>
               </motion.div>
             ) : (
               <motion.div key="idle-text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <p className="text-base font-medium text-neutral-700 dark:text-neutral-200">
-                  Arrastra tu archivo aquí
+                  Arrastra tu archivo CSV o Excel aquí, o haz clic para seleccionar
                 </p>
-                <p className="text-sm text-neutral-400 mt-1">CSV o Excel (.xlsx) · hasta 10 MB</p>
+                <p className="text-sm text-neutral-400 mt-1">Soporta .csv y .xlsx · Mínimo 5 filas de datos numéricos</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -261,14 +420,7 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
         )}
 
         {state !== 'loading' && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); loadDemo(); }}
-            className="flex items-center gap-2 rounded-lg border border-neutral-300 dark:border-neutral-600 px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 transition-colors"
-          >
-            <FileText className="h-4 w-4" aria-hidden />
-            Cargar datos de ejemplo
-          </button>
+          <DemoSelector onLoad={loadScenario} disabled={false} />
         )}
       </div>
     </div>
