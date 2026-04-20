@@ -109,11 +109,11 @@ function DemoSelector({
       <AnimatePresence>
         {open && scenarios.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
+            exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.18 }}
-            className="absolute bottom-full mb-2 left-0 z-50 w-72 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-lg overflow-hidden"
+            className="absolute top-full mt-2 left-0 z-50 w-72 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <p className="px-4 py-2.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-100 dark:border-neutral-700">
