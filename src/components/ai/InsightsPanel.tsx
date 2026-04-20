@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
-  RefreshCw,
   ChevronDown,
   ChevronUp,
   Lightbulb,
@@ -68,36 +67,6 @@ function StatusBadge({ status }: { status: SpcInsights['processStatus'] }) {
     <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded">
       Bajo control
     </span>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
-          Generando informe Six Sigma con IA
-        </p>
-        <span className="flex gap-0.5">
-          {[0, 1, 2].map((i) => (
-            <motion.span
-              key={i}
-              className="inline-block w-1 h-1 rounded-full bg-blue-500"
-              animate={{ opacity: [0.3, 1, 0.3] }}
-              transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.3 }}
-            />
-          ))}
-        </span>
-      </div>
-      <div className="space-y-2 animate-pulse">
-        <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4" />
-        <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2" />
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-16 bg-neutral-100 dark:bg-neutral-800 rounded-lg" />
-        ))}
-        <div className="h-24 bg-neutral-100 dark:bg-neutral-800 rounded-lg" />
-      </div>
-    </div>
   );
 }
 
@@ -232,7 +201,7 @@ export function InsightsPanel({ analysis }: InsightsPanelProps) {
       }
       setState({ status: 'success', data: json.data });
     } catch {
-      setState({ status: 'error', message: 'Error de red al obtener análisis de IA.' });
+      setState({ status: 'error', message: 'Error de red al obtener el informe SPC.' });
     }
   }, [analysis]);
 
@@ -248,29 +217,24 @@ export function InsightsPanel({ analysis }: InsightsPanelProps) {
       transition={{ duration: 0.4, delay: 0.2 }}
     >
       {/* Header */}
-      <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-700 flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-700 flex items-center">
         <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200 flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-blue-500" aria-hidden />
-          Análisis con IA
+          Informe SPC
         </h3>
-        {state.status !== 'loading' && (
-          <button
-            type="button"
-            onClick={fetchInsights}
-            className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors"
-            aria-label="Regenerar análisis"
-          >
-            <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-            Regenerar
-          </button>
-        )}
       </div>
 
       <div className="p-4">
         <AnimatePresence mode="wait">
           {state.status === 'loading' && (
-            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <LoadingSkeleton />
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="py-6 text-center text-sm text-neutral-400"
+            >
+              Generando informe…
             </motion.div>
           )}
 
@@ -280,17 +244,10 @@ export function InsightsPanel({ analysis }: InsightsPanelProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center gap-3 py-8 text-center"
+              className="flex items-center gap-2 py-6 text-sm text-red-500"
             >
-              <AlertTriangle className="h-10 w-10 text-orange-400" aria-hidden />
-              <p className="text-sm text-neutral-600 dark:text-neutral-300">{state.message}</p>
-              <button
-                type="button"
-                onClick={fetchInsights}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-              >
-                <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Reintentar
-              </button>
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+              {state.message}
             </motion.div>
           )}
 
