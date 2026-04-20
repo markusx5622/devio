@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Bar,
@@ -20,20 +20,54 @@ const CATEGORY_CONFIG: Record<
   CapabilityCategory,
   { label: string; bg: string; text: string }
 > = {
-  excellent:   { label: 'Excelente',   bg: 'bg-green-100 dark:bg-green-900/30',  text: 'text-green-700 dark:text-green-300' },
-  adequate:    { label: 'Adecuado',    bg: 'bg-blue-100 dark:bg-blue-900/30',    text: 'text-blue-700 dark:text-blue-300' },
-  marginal:    { label: 'Marginal',    bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-300' },
-  inadequate:  { label: 'Inadecuado', bg: 'bg-red-100 dark:bg-red-900/30',      text: 'text-red-700 dark:text-red-300' },
+  excellent:   { label: 'Excelente',  bg: 'bg-green-100 dark:bg-green-900/30',   text: 'text-green-700 dark:text-green-300' },
+  adequate:    { label: 'Adecuado',   bg: 'bg-blue-100 dark:bg-blue-900/30',     text: 'text-blue-700 dark:text-blue-300' },
+  marginal:    { label: 'Marginal',   bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-300' },
+  inadequate:  { label: 'Inadecuado', bg: 'bg-red-100 dark:bg-red-900/30',       text: 'text-red-700 dark:text-red-300' },
 };
 
 function categorize(v: number): CapabilityCategory {
   if (v >= 1.67) return 'excellent';
   if (v >= 1.33) return 'adequate';
-  if (v >= 1.0) return 'marginal';
+  if (v >= 1.0)  return 'marginal';
   return 'inadequate';
 }
 
+// ---------------------------------------------------------------------------
+// Animated number hook
+// ---------------------------------------------------------------------------
+
+function useAnimatedNumber(target: number, duration = 800): number {
+  const [current, setCurrent] = useState(0);
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    const start = performance.now();
+
+    function step(now: number) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // cubic ease-out
+      setCurrent(target * eased);
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target, duration]);
+
+  return current;
+}
+
+// ---------------------------------------------------------------------------
+// Capability badge with animated value
+// ---------------------------------------------------------------------------
+
 function CapBadge({ value }: { value: number | undefined }) {
+  const animated = useAnimatedNumber(value ?? 0);
+
   if (value === undefined) {
     return <span className="text-sm font-mono text-neutral-400">N/A</span>;
   }
@@ -41,13 +75,25 @@ function CapBadge({ value }: { value: number | undefined }) {
   const cfg = CATEGORY_CONFIG[cat];
   return (
     <div className="flex items-center gap-2">
-      <span className="text-lg font-bold font-mono text-neutral-800 dark:text-neutral-100">{value.toFixed(3)}</span>
-      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cfg.bg} ${cfg.text}`}>{cfg.label}</span>
+      <span className="text-lg font-bold font-mono text-neutral-800 dark:text-neutral-100 tabular-nums">
+        {animated.toFixed(3)}
+      </span>
+      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cfg.bg} ${cfg.text}`}>
+        {cfg.label}
+      </span>
     </div>
   );
 }
 
-function IndexRow({ label, value, description }: { label: React.ReactNode; value: number | undefined; description: string }) {
+function IndexRow({
+  label,
+  value,
+  description,
+}: {
+  label: React.ReactNode;
+  value: number | undefined;
+  description: string;
+}) {
   return (
     <div className="flex items-center justify-between py-2 border-b border-neutral-100 dark:border-neutral-700/50 last:border-0">
       <div>
@@ -59,7 +105,10 @@ function IndexRow({ label, value, description }: { label: React.ReactNode; value
   );
 }
 
-// Normal distribution PDF
+// ---------------------------------------------------------------------------
+// Normal distribution helpers
+// ---------------------------------------------------------------------------
+
 function normalPdf(x: number, mu: number, sigma: number): number {
   return Math.exp(-0.5 * ((x - mu) / sigma) ** 2) / (sigma * Math.sqrt(2 * Math.PI));
 }
@@ -89,13 +138,11 @@ function computeHistogram(values: readonly number[], binCount = 12): HistogramBi
     bins[idx]!.count++;
   });
 
-  // Compute mean and sigma
   const mu = values.reduce((s, v) => s + v, 0) / values.length;
   const sigma = Math.sqrt(values.reduce((s, v) => s + (v - mu) ** 2, 0) / values.length);
 
   if (sigma === 0) return bins;
 
-  // Scale normal to match histogram heights
   const maxCount = Math.max(...bins.map((b) => b.count));
   const maxNormal = normalPdf(mu, mu, sigma);
   const scale = maxCount / maxNormal;
@@ -106,6 +153,10 @@ function computeHistogram(values: readonly number[], binCount = 12): HistogramBi
 
   return bins;
 }
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 interface CapabilityCardProps {
   capability: ProcessCapability;
@@ -121,10 +172,11 @@ export function CapabilityCard({ capability, values, specLimits }: CapabilityCar
 
   return (
     <motion.div
-      className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-4 space-y-4"
+      className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-4 space-y-4 transition-shadow duration-200"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.1 }}
+      whileHover={{ boxShadow: 'var(--shadow-card-hover)' }}
     >
       <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
         Índices de Capacidad del Proceso
@@ -132,16 +184,16 @@ export function CapabilityCard({ capability, values, specLimits }: CapabilityCar
 
       {specLimits && (
         <div className="flex gap-4 text-xs text-neutral-500">
-          <span>USL: <span className="font-mono font-semibold text-neutral-700 dark:text-neutral-300">{specLimits.usl}</span></span>
-          <span>LSL: <span className="font-mono font-semibold text-neutral-700 dark:text-neutral-300">{specLimits.lsl}</span></span>
-          <span>Sigma: <span className="font-mono font-semibold text-neutral-700 dark:text-neutral-300">{capability.sigma.toFixed(2)}σ</span></span>
+          <span>USL: <span className="font-mono font-semibold text-neutral-700 dark:text-neutral-300 tabular-nums">{specLimits.usl}</span></span>
+          <span>LSL: <span className="font-mono font-semibold text-neutral-700 dark:text-neutral-300 tabular-nums">{specLimits.lsl}</span></span>
+          <span>Sigma: <span className="font-mono font-semibold text-neutral-700 dark:text-neutral-300 tabular-nums">{capability.sigma.toFixed(2)}σ</span></span>
         </div>
       )}
 
       <div>
-        <IndexRow label={<SpcTooltip term="Cp">Cp</SpcTooltip>} value={capability.cp} description="Capacidad potencial a corto plazo (tolerancia / 6σ̂)" />
+        <IndexRow label={<SpcTooltip term="Cp">Cp</SpcTooltip>}   value={capability.cp}  description="Capacidad potencial a corto plazo (tolerancia / 6σ̂)" />
         <IndexRow label={<SpcTooltip term="Cpk">Cpk</SpcTooltip>} value={capability.cpk} description="Capacidad real a corto plazo (considera centrado)" />
-        <IndexRow label={<SpcTooltip term="Pp">Pp</SpcTooltip>} value={capability.pp} description="Desempeño potencial a largo plazo" />
+        <IndexRow label={<SpcTooltip term="Pp">Pp</SpcTooltip>}   value={capability.pp}  description="Desempeño potencial a largo plazo" />
         <IndexRow label={<SpcTooltip term="Ppk">Ppk</SpcTooltip>} value={capability.ppk} description="Desempeño real a largo plazo (considera centrado)" />
       </div>
 

@@ -31,6 +31,31 @@ function chartLabel(analysis: AnalysisResult): string {
 }
 
 // ---------------------------------------------------------------------------
+// Staggered result section wrapper
+// ---------------------------------------------------------------------------
+
+function ResultSection({
+  children,
+  delay = 0,
+  label,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  label?: string;
+}) {
+  return (
+    <motion.section
+      aria-label={label}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay, ease: [0.4, 0, 0.2, 1] }}
+    >
+      {children}
+    </motion.section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Spec limits modal
 // ---------------------------------------------------------------------------
 
@@ -98,6 +123,7 @@ function SpecLimitsModal({
           {err && <p className="text-xs text-red-500">{err}</p>}
           <button
             type="submit"
+            data-primary
             className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
           >
             Calcular capacidad
@@ -146,7 +172,7 @@ function SummaryStrip({ analysis }: { analysis: AnalysisResult }) {
 }
 
 // ---------------------------------------------------------------------------
-// Results grid
+// Results grid — staggered entrance
 // ---------------------------------------------------------------------------
 
 function ResultsGrid({
@@ -166,8 +192,8 @@ function ResultsGrid({
     <div className="space-y-6">
       <SummaryStrip analysis={analysis} />
 
-      {/* Control charts */}
-      <section aria-label="Cartas de control">
+      {/* Control charts — delay 0 */}
+      <ResultSection label="Cartas de control" delay={0}>
         <h2 className="text-base font-semibold text-neutral-700 dark:text-neutral-200 mb-3">
           Cartas de Control
         </h2>
@@ -185,44 +211,46 @@ function ResultsGrid({
             </>
           )}
         </div>
-      </section>
+      </ResultSection>
 
-      {/* Capability + Violations */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {capability ? (
-          <section aria-label="Capacidad del proceso">
-            <CapabilityCard capability={capability} values={rawValues} />
-          </section>
-        ) : (
-          <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-700 p-6 flex items-center justify-center text-center">
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Índices de capacidad no disponibles
-              </p>
-              <p className="text-xs text-neutral-400 max-w-xs">
-                Introduce límites de especificación (USL/LSL) en el análisis para calcular Cp y Cpk.
-              </p>
-              <button
-                type="button"
-                onClick={onAddSpecLimits}
-                className="no-print inline-flex items-center gap-2 rounded-lg border border-blue-300 dark:border-blue-700 px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
-                Añadir límites
-              </button>
+      {/* Capability + Violations — delay 150ms */}
+      <ResultSection delay={0.15}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {capability ? (
+            <section aria-label="Capacidad del proceso">
+              <CapabilityCard capability={capability} values={rawValues} />
+            </section>
+          ) : (
+            <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-700 p-6 flex items-center justify-center text-center">
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                  Índices de capacidad no disponibles
+                </p>
+                <p className="text-xs text-neutral-400 max-w-xs">
+                  Introduce límites de especificación (USL/LSL) en el análisis para calcular Cp y Cpk.
+                </p>
+                <button
+                  type="button"
+                  onClick={onAddSpecLimits}
+                  className="no-print inline-flex items-center gap-2 rounded-lg border border-blue-300 dark:border-blue-700 px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
+                  Añadir límites
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <section aria-label="Violaciones de reglas Nelson">
-          <ViolationTable violations={analysis.violations} />
-        </section>
-      </div>
+          <section aria-label="Violaciones de reglas Nelson">
+            <ViolationTable violations={analysis.violations} />
+          </section>
+        </div>
+      </ResultSection>
 
-      {/* AI Insights */}
-      <section aria-label="Análisis con inteligencia artificial">
+      {/* Insights — delay 300ms */}
+      <ResultSection label="Análisis con inteligencia artificial" delay={0.3}>
         <InsightsPanel analysis={analysis} />
-      </section>
+      </ResultSection>
     </div>
   );
 }
@@ -303,10 +331,10 @@ export default function DashboardPage() {
         {pageState === 'results' && analysis && (
           <motion.div
             key="results"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.35 }}
+            transition={{ duration: 0.2 }}
           >
             <ResultsGrid
               analysis={analysis}
