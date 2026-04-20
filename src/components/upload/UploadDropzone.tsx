@@ -6,7 +6,6 @@ import {
   UploadCloud,
   FileText,
   AlertCircle,
-  Loader2,
   PlayCircle,
   ChevronDown,
   ChevronUp,
@@ -40,7 +39,7 @@ interface UploadDropzoneProps {
   onSuccess: (result: AnalysisResult) => void;
 }
 
-type UploadState = 'idle' | 'dragging' | 'preview' | 'loading' | 'error';
+type UploadState = 'idle' | 'dragging' | 'preview' | 'loading' | 'success' | 'error';
 
 // ---------------------------------------------------------------------------
 // Badge config
@@ -71,6 +70,13 @@ const BADGE_CONFIG: Record<
     className: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
   },
 };
+
+const LOADING_MESSAGES = [
+  'Leyendo archivo...',
+  'Calculando límites...',
+  'Detectando violaciones...',
+  'Generando informe...',
+];
 
 // ---------------------------------------------------------------------------
 // Demo selector sub-component
@@ -161,7 +167,18 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
   const [preview, setPreview] = useState<ParsedPreview | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [pendingScenario, setPendingScenario] = useState<DemoScenario | null>(null);
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Cycle loading messages
+  useEffect(() => {
+    if (state !== 'loading') return;
+    setLoadingMsgIdx(0);
+    const id = setInterval(() => {
+      setLoadingMsgIdx((i) => (i + 1) % LOADING_MESSAGES.length);
+    }, 1500);
+    return () => clearInterval(id);
+  }, [state]);
 
   const parseCsvPreview = useCallback((text: string): ParsedPreview => {
     const nonComment = text.split('\n').filter((l) => !l.trim().startsWith('#'));
@@ -248,7 +265,9 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
         return;
       }
 
-      onSuccess(json.data);
+      // Brief success flash before transitioning
+      setState('success');
+      setTimeout(() => { onSuccess(json.data); }, 550);
     } catch {
       setState('error');
       setError('Error al procesar el archivo. Comprueba el formato e inténtalo de nuevo.');
@@ -264,29 +283,34 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
     if (inputRef.current) inputRef.current.value = '';
   }, []);
 
+  const isDragging = state === 'dragging';
+  const isLoading = state === 'loading';
+  const isSuccess = state === 'success';
+
   return (
     <div className="w-full space-y-4">
       {/* Drop zone */}
       <motion.div
         className={[
-          'relative rounded-xl border-2 border-dashed transition-colors duration-200 cursor-pointer',
-          state === 'dragging'
-            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+          'relative rounded-xl border-2 border-dashed transition-colors duration-200 cursor-pointer overflow-hidden',
+          isDragging
+            ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/30'
             : state === 'error'
               ? 'border-red-400 bg-red-50 dark:bg-red-950/20'
-              : state === 'preview' || state === 'loading'
+              : state === 'preview' || isLoading
                 ? 'border-green-400 bg-green-50 dark:bg-green-950/20'
-                : 'border-neutral-300 dark:border-neutral-600 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/10',
+                : isSuccess
+                  ? 'border-green-500 bg-green-50/80 dark:bg-green-950/30'
+                  : 'border-neutral-300 dark:border-neutral-600 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/10',
         ].join(' ')}
+        animate={isDragging ? { scale: 1.02 } : { scale: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onDragOver={(e) => { e.preventDefault(); setState('dragging'); }}
         onDragLeave={() => { setState(file ? 'preview' : 'idle'); }}
         onDrop={handleDrop}
-        onClick={() => { if (state !== 'loading') inputRef.current?.click(); }}
+        onClick={() => { if (!isLoading && !isSuccess) inputRef.current?.click(); }}
         role="button"
         aria-label="Arrastra tu archivo CSV o Excel aquí, o haz clic para seleccionar"
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
       >
         <input
           ref={inputRef}
@@ -299,42 +323,99 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
 
         <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
           <AnimatePresence mode="wait">
-            {state === 'loading' ? (
-              <motion.div key="loading" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
-                <Loader2 className="h-12 w-12 text-blue-500 animate-spin" aria-hidden />
+            {isLoading ? (
+              <motion.div
+                key="loading"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                className="space-y-3 w-full"
+              >
+                <div className="flex justify-center gap-1.5">
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      className="h-2 w-2 rounded-full bg-blue-500"
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.3 }}
+                    />
+                  ))}
+                </div>
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={loadingMsgIdx}
+                    className="text-sm font-medium text-neutral-600 dark:text-neutral-300"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    {LOADING_MESSAGES[loadingMsgIdx]}
+                  </motion.p>
+                </AnimatePresence>
+              </motion.div>
+            ) : isSuccess ? (
+              <motion.div
+                key="success"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+              >
+                <CheckCircle2 className="h-12 w-12 text-green-500" aria-hidden />
               </motion.div>
             ) : state === 'error' ? (
-              <motion.div key="error" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
+              <motion.div
+                key="error"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+              >
                 <AlertCircle className="h-12 w-12 text-red-500" aria-hidden />
               </motion.div>
             ) : state === 'preview' ? (
-              <motion.div key="preview-icon" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
+              <motion.div
+                key="preview-icon"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+              >
                 <FileText className="h-12 w-12 text-green-500" aria-hidden />
               </motion.div>
             ) : (
-              <motion.div key="idle" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
+              <motion.div
+                key="idle"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1, y: [0, -4, 0] }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{
+                  scale: { duration: 0.3 },
+                  opacity: { duration: 0.3 },
+                  y: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+                }}
+              >
                 <UploadCloud className="h-12 w-12 text-neutral-400" aria-hidden />
               </motion.div>
             )}
           </AnimatePresence>
 
           <AnimatePresence mode="wait">
-            {state === 'loading' ? (
-              <motion.div key="loading-text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-1.5">
-                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">Analizando proceso…</p>
-                <div className="flex justify-center gap-1">
-                  {[0, 1, 2].map((i) => (
-                    <motion.div
-                      key={i}
-                      className="h-1.5 w-1.5 rounded-full bg-blue-500"
-                      animate={{ opacity: [0.3, 1, 0.3] }}
-                      transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.3 }}
-                    />
-                  ))}
-                </div>
-              </motion.div>
+            {isLoading ? null : isSuccess ? (
+              <motion.p
+                key="success-text"
+                className="text-sm font-medium text-green-600 dark:text-green-400"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                ¡Análisis completado!
+              </motion.p>
             ) : state === 'error' ? (
-              <motion.div key="error-text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.div
+                key="error-text"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
                 <p className="text-sm font-medium text-red-600 dark:text-red-400">{error}</p>
                 <button
                   type="button"
@@ -345,23 +426,56 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
                 </button>
               </motion.div>
             ) : state === 'preview' ? (
-              <motion.div key="preview-text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full" onClick={(e) => e.stopPropagation()}>
-                <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-200 truncate max-w-xs mx-auto">{file?.name}</p>
+              <motion.div
+                key="preview-text"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-200 truncate max-w-xs mx-auto">
+                  {file?.name}
+                </p>
                 {pendingScenario && (
                   <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">{pendingScenario.label}</p>
                 )}
                 <p className="text-xs text-neutral-400 mt-0.5">Haz clic en «Analizar» para continuar</p>
               </motion.div>
             ) : (
-              <motion.div key="idle-text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.div
+                key="idle-text"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
                 <p className="text-base font-medium text-neutral-700 dark:text-neutral-200">
                   Arrastra tu archivo CSV o Excel aquí, o haz clic para seleccionar
                 </p>
-                <p className="text-sm text-neutral-400 mt-1">Soporta .csv y .xlsx · Mínimo 5 filas de datos numéricos</p>
+                <p className="text-sm text-neutral-400 mt-1">
+                  Soporta .csv y .xlsx · Mínimo 5 filas de datos numéricos
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
+
+        {/* Shimmer progress bar during loading */}
+        {isLoading && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 overflow-hidden">
+            <div className="skeleton w-full h-full" />
+          </div>
+        )}
+
+        {/* Success green border flash */}
+        {isSuccess && (
+          <motion.div
+            className="absolute inset-0 rounded-xl border-2 border-green-500 pointer-events-none"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+          />
+        )}
       </motion.div>
 
       {/* Data preview table */}
@@ -410,6 +524,7 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
           <motion.button
             type="button"
             onClick={runAnalysis}
+            data-primary
             className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 active:scale-95 transition-all"
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
@@ -419,7 +534,7 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
           </motion.button>
         )}
 
-        {state !== 'loading' && (
+        {!isLoading && !isSuccess && (
           <DemoSelector onLoad={loadScenario} disabled={false} />
         )}
       </div>
