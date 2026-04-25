@@ -7,12 +7,7 @@ import {
   FileText,
   AlertCircle,
   PlayCircle,
-  ChevronDown,
-  ChevronUp,
   CheckCircle2,
-  TrendingUp,
-  Zap,
-  AlertTriangle,
 } from 'lucide-react';
 import type { AnalysisResult } from '@/lib/spc/types';
 
@@ -25,51 +20,11 @@ interface ParsedPreview {
   rows: string[][];
 }
 
-interface DemoScenario {
-  id: string;
-  filename: string;
-  label: string;
-  description: string;
-  chartType: string;
-  badge: 'stable' | 'drift' | 'spike' | 'incapable';
-  specLimits?: { usl: number; lsl: number };
-}
-
 interface UploadDropzoneProps {
   onSuccess: (result: AnalysisResult) => void;
 }
 
 type UploadState = 'idle' | 'dragging' | 'preview' | 'loading' | 'success' | 'error';
-
-// ---------------------------------------------------------------------------
-// Badge config
-// ---------------------------------------------------------------------------
-
-const BADGE_CONFIG: Record<
-  DemoScenario['badge'],
-  { label: string; icon: React.ElementType; className: string }
-> = {
-  stable: {
-    label: 'Estable',
-    icon: CheckCircle2,
-    className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
-  },
-  drift: {
-    label: 'Deriva',
-    icon: TrendingUp,
-    className: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300',
-  },
-  spike: {
-    label: 'Violaciones',
-    icon: Zap,
-    className: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
-  },
-  incapable: {
-    label: 'Incapaz',
-    icon: AlertTriangle,
-    className: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
-  },
-};
 
 const LOADING_MESSAGES = [
   'Leyendo archivo...',
@@ -77,85 +32,6 @@ const LOADING_MESSAGES = [
   'Detectando violaciones...',
   'Generando informe...',
 ];
-
-// ---------------------------------------------------------------------------
-// Demo selector sub-component
-// ---------------------------------------------------------------------------
-
-function DemoSelector({
-  onLoad,
-  disabled,
-}: {
-  onLoad: (scenario: DemoScenario) => void;
-  disabled: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [scenarios, setScenarios] = useState<DemoScenario[]>([]);
-
-  useEffect(() => {
-    fetch('/demo/index.json')
-      .then((r) => r.json())
-      .then((data: DemoScenario[]) => setScenarios(data))
-      .catch(() => {/* silently ignore */});
-  }, []);
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
-        className="flex items-center gap-2 rounded-lg border border-neutral-300 dark:border-neutral-600 px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 transition-colors disabled:opacity-40"
-      >
-        <FileText className="h-4 w-4" aria-hidden />
-        Cargar ejemplo
-        {open ? <ChevronUp className="h-3.5 w-3.5" aria-hidden /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden />}
-      </button>
-
-      <AnimatePresence>
-        {open && scenarios.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.18 }}
-            className="absolute top-full mt-2 left-0 z-50 w-72 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-lg overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className="px-4 py-2.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-100 dark:border-neutral-700">
-              Selecciona un escenario
-            </p>
-            <div className="divide-y divide-neutral-100 dark:divide-neutral-700/50">
-              {scenarios.map((s) => {
-                const cfg = BADGE_CONFIG[s.badge];
-                const Icon = cfg.icon;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => { setOpen(false); onLoad(s); }}
-                    className="w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors"
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-0.5">
-                      <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
-                        {s.label}
-                      </span>
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.className}`}>
-                        <Icon className="h-3 w-3" aria-hidden />
-                        {cfg.label}
-                      </span>
-                    </div>
-                    <p className="text-xs text-neutral-400 leading-relaxed">{s.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -166,7 +42,6 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<ParsedPreview | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [pendingScenario, setPendingScenario] = useState<DemoScenario | null>(null);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -215,7 +90,6 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
         setError('Solo se aceptan archivos CSV o Excel (.xlsx). Por favor sube un archivo válido.');
         return;
       }
-      setPendingScenario(null);
       loadFile(dropped);
     },
     [loadFile],
@@ -224,18 +98,7 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
   const handleFileInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const picked = e.target.files?.[0];
-      if (picked) { setPendingScenario(null); loadFile(picked); }
-    },
-    [loadFile],
-  );
-
-  const loadScenario = useCallback(
-    async (scenario: DemoScenario) => {
-      setPendingScenario(scenario);
-      const res = await fetch(`/demo/${scenario.filename}`);
-      const text = await res.text();
-      const demoFile = new File([text], scenario.filename, { type: 'text/csv' });
-      await loadFile(demoFile);
+      if (picked) { loadFile(picked); }
     },
     [loadFile],
   );
@@ -247,11 +110,7 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
 
     const body = new FormData();
     body.append('file', file);
-    body.append('analysisType', pendingScenario?.chartType === 'imr' ? 'imr' : 'auto');
-    if (pendingScenario?.specLimits) {
-      body.append('usl', String(pendingScenario.specLimits.usl));
-      body.append('lsl', String(pendingScenario.specLimits.lsl));
-    }
+    body.append('analysisType', 'auto');
 
     try {
       const res = await fetch('/api/analyze', { method: 'POST', body });
@@ -272,14 +131,13 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
       setState('error');
       setError('Error al procesar el archivo. Comprueba el formato e inténtalo de nuevo.');
     }
-  }, [file, onSuccess, pendingScenario]);
+  }, [file, onSuccess]);
 
   const reset = useCallback(() => {
     setState('idle');
     setFile(null);
     setPreview(null);
     setError(null);
-    setPendingScenario(null);
     if (inputRef.current) inputRef.current.value = '';
   }, []);
 
@@ -437,9 +295,6 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
                 <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-200 truncate max-w-xs mx-auto">
                   {file?.name}
                 </p>
-                {pendingScenario && (
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">{pendingScenario.label}</p>
-                )}
                 <p className="text-xs text-neutral-400 mt-0.5">Haz clic en «Analizar» para continuar</p>
               </motion.div>
             ) : (
@@ -532,10 +387,6 @@ export function UploadDropzone({ onSuccess }: UploadDropzoneProps) {
             <PlayCircle className="h-4 w-4" aria-hidden />
             Analizar
           </motion.button>
-        )}
-
-        {!isLoading && !isSuccess && (
-          <DemoSelector onLoad={loadScenario} disabled={false} />
         )}
       </div>
     </div>

@@ -320,7 +320,7 @@ export default function LandingPage() {
             </motion.div>
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Link
-                href="/app?demo=proceso-estable"
+                href="/demo"
                 className="inline-flex items-center gap-2 rounded-xl border-2 border-blue-600 dark:border-blue-400 px-8 py-4 text-base font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"
               >
                 Ver Demo
