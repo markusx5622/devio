@@ -10,7 +10,7 @@ import { CapabilityCard } from '@/components/charts/CapabilityCard';
 import { ViolationTable } from '@/components/results/ViolationTable';
 import { InsightsPanel } from '@/components/ai/InsightsPanel';
 import { ExportButton } from '@/components/results/ExportButton';
-import { computeCapability } from '@/lib/spc';
+import { computeCapability, allValues } from '@/lib/spc';
 import type { AnalysisResult, ProcessCapability } from '@/lib/spc/types';
 
 type PageState = 'upload' | 'results';
@@ -162,14 +162,6 @@ function extractValues(analysis: AnalysisResult): readonly number[] {
   const { chart } = analysis;
   if (chart.type === 'i-mr') return chart.individuals.map((m) => m.value);
   return allValues(chart.subgroups);
-}
-
-function allValues(subgroups: readonly (readonly number[])[]): readonly number[] {
-  const values: number[] = [];
-  for (const group of subgroups) {
-    values.push(...group);
-  }
-  return values;
 }
 
 function chartLabel(analysis: AnalysisResult): string {
