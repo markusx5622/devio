@@ -127,8 +127,8 @@ export function ViolationTable({ violations }: ViolationTableProps) {
       transition={{ duration: 0.4, delay: 0.15 }}
       whileHover={{ boxShadow: 'var(--shadow-card-hover)' }}
     >
-      <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-700 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+      <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-neutral-100 dark:border-neutral-700 flex items-center justify-between">
+        <h3 className="text-sm sm:text-base font-semibold text-neutral-700 dark:text-neutral-200">
           Violaciones de Reglas Nelson
         </h3>
         {violations.length === 0 ? (

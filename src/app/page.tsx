@@ -81,7 +81,7 @@ function LandingHeader() {
           : 'bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-700',
       ].join(' ')}
     >
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 flex h-14 items-center justify-between">
+      <div className="mx-auto w-11/12 flex h-14 items-center justify-between">
         <div className="flex items-center gap-2 font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
           <motion.div
             whileHover={{ scale: 1.15, rotate: 5 }}
@@ -195,8 +195,8 @@ function HowItWorks() {
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5, ease: 'easeOut' }}
     >
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
-        <h2 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100 text-center mb-12">
+      <div className="mx-auto w-11/12">
+        <h2 className="text-2xl sm:text-3xl font-bold text-neutral-800 dark:text-neutral-100 text-center mb-12 sm:mb-16">
           ¿Cómo funciona?
         </h2>
 
@@ -256,7 +256,7 @@ export default function LandingPage() {
       <main className="flex-1">
         {/* ── Hero ── */}
         <section
-          className="mx-auto max-w-5xl px-4 sm:px-6 pt-20 pb-16 text-center"
+          className="mx-auto w-11/12 pt-20 pb-16 text-center"
           aria-label="Introducción"
         >
           <motion.div
@@ -329,7 +329,7 @@ export default function LandingPage() {
         {/* ── Features ── */}
         <motion.section
           ref={featuresRef}
-          className="mx-auto max-w-5xl px-4 sm:px-6 pb-20"
+          className="mx-auto w-11/12 pb-20"
           aria-label="Características"
           initial={{ opacity: 0, y: 24 }}
           animate={featuresInView ? { opacity: 1, y: 0 } : {}}
@@ -356,7 +356,7 @@ export default function LandingPage() {
         {/* ── Bottom CTA ── */}
         <motion.section
           ref={ctaRef}
-          className="mx-auto max-w-5xl px-4 sm:px-6 py-20 text-center"
+          className="mx-auto w-11/12 py-20 text-center"
           aria-label="Llamada a la acción"
           initial={{ opacity: 0, y: 24 }}
           animate={ctaInView ? { opacity: 1, y: 0 } : {}}
@@ -382,7 +382,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-neutral-200 dark:border-neutral-700 py-8">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-neutral-400">
+        <div className="mx-auto w-11/12 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-neutral-400">
           <div className="flex items-center gap-2">
             <BarChart2 className="h-4 w-4 text-blue-600" aria-hidden />
             <span className="font-semibold text-neutral-600 dark:text-neutral-300">Devio</span>

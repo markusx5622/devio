@@ -11,7 +11,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col bg-neutral-50 dark:bg-neutral-900">
       <AppHeader />
 
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 mx-auto w-11/12 max-w-full py-6 sm:py-8">
         {children}
       </main>
 

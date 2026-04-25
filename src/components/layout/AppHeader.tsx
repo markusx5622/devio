@@ -49,7 +49,7 @@ export function AppHeader() {
           : 'bg-transparent border-b border-transparent',
       ].join(' ')}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex h-14 items-center justify-between">
+      <div className="mx-auto w-11/12 flex h-14 items-center justify-between">
         <Link
           href="/"
           className="flex items-center gap-2 font-bold tracking-tight text-neutral-800 dark:text-neutral-100 hover:opacity-80 transition-opacity"

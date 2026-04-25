@@ -153,13 +153,13 @@ function SummaryStrip({ analysis }: { analysis: AnalysisResult }) {
 
   return (
     <motion.div
-      className="grid grid-cols-2 sm:grid-cols-5 gap-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-4"
+      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-4 sm:p-5"
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
     >
-      <div className="text-center">
-        <p className="text-xs text-neutral-400 uppercase tracking-wide">Tipo de carta</p>
+      <div className="text-center col-span-2 sm:col-span-1">
+        <p className="text-xs text-neutral-400 uppercase tracking-wide">Tipo</p>
         <p className="mt-0.5 text-lg font-bold font-mono text-neutral-800 dark:text-neutral-100">
           {chartLabel(analysis)}
         </p>
@@ -176,7 +176,7 @@ function SummaryStrip({ analysis }: { analysis: AnalysisResult }) {
         <p className="text-xs text-neutral-400 uppercase tracking-wide">Violaciones</p>
         <AnimatedKpi value={violations.length} />
       </div>
-      <div className="text-center">
+      <div className="text-center col-span-2 sm:col-span-1">
         <p className="text-xs text-neutral-400 uppercase tracking-wide">Estado</p>
         {isInControl ? (
           <span className="mt-0.5 flex items-center justify-center gap-1.5">
@@ -212,15 +212,15 @@ function ResultsGrid({
   const capability = analysis.capability ?? extraCapability ?? null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       <SummaryStrip analysis={analysis} />
 
       {/* Control charts — delay 0 */}
       <ResultSection label="Cartas de control" delay={0}>
-        <h2 className="text-base font-semibold text-neutral-700 dark:text-neutral-200 mb-3">
+        <h2 className="text-base sm:text-lg font-semibold text-neutral-700 dark:text-neutral-200 mb-4 sm:mb-5">
           Cartas de Control
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 sm:gap-6">
           {(chart.type === 'xbar-r' || chart.type === 'xbar-s') && (
             <>
               <ControlChart analysis={analysis} chartType="means" />
@@ -238,7 +238,7 @@ function ResultsGrid({
 
       {/* Capability + Violations — delay 150ms */}
       <ResultSection delay={0.15}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 sm:gap-6">
           {capability ? (
             <section aria-label="Capacidad del proceso">
               <CapabilityCard capability={capability} values={rawValues} />
@@ -309,14 +309,14 @@ export default function DashboardPage() {
   }, [analysis]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">
+          <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-neutral-50">
             Dashboard SPC
           </h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             Sube tu archivo de datos para generar cartas de control e índices de capacidad.
           </p>
         </div>
@@ -345,7 +345,7 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3 }}
-            className="max-w-2xl mx-auto no-print"
+            className="w-full max-w-3xl mx-auto no-print"
           >
             <UploadDropzone onSuccess={handleSuccess} />
           </motion.div>

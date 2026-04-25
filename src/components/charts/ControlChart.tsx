@@ -261,7 +261,7 @@ export function ControlChart({ analysis, chartType }: ControlChartProps) {
 
   return (
     <motion.div
-      className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-4 space-y-3 transition-shadow duration-200"
+      className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-4 sm:p-5 space-y-3 sm:space-y-4 transition-shadow duration-200"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
@@ -285,8 +285,8 @@ export function ControlChart({ analysis, chartType }: ControlChartProps) {
         <span className="text-orange-500"><SpcTooltip term="LCL">LCL</SpcTooltip> {lcl.toFixed(3)}</span>
       </div>
 
-      <ResponsiveContainer width="100%" height={240}>
-        <LineChart data={data} margin={{ top: 8, right: 56, bottom: 4, left: 8 }}>
+      <ResponsiveContainer width="100%" height={260}>
+        <LineChart data={data} margin={{ top: 12, right: 64, bottom: 8, left: 12 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
           <XAxis
             dataKey="index"

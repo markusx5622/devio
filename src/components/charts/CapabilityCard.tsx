@@ -145,7 +145,7 @@ export function CapabilityCard({ capability, values, specLimits }: CapabilityCar
 
   return (
     <motion.div
-      className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-4 space-y-4 transition-shadow duration-200"
+      className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-4 sm:p-5 space-y-4 sm:space-y-5 transition-shadow duration-200"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.1 }}
@@ -173,8 +173,8 @@ export function CapabilityCard({ capability, values, specLimits }: CapabilityCar
       {histogram.length > 0 && (
         <div>
           <p className="text-xs font-medium text-neutral-400 mb-2">Distribución de datos + curva normal teórica</p>
-          <ResponsiveContainer width="100%" height={140}>
-            <ComposedChart data={histogram} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+          <ResponsiveContainer width="100%" height={160}>
+            <ComposedChart data={histogram} margin={{ top: 8, right: 12, bottom: 8, left: 8 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis
                 dataKey="xMid"
