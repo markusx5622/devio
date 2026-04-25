@@ -338,15 +338,18 @@ export function MathematicsSection() {
             Ahora que entiendes la lógica detrás de Devio, pruébalo. Sube un CSV, visualiza la matemática
             en tiempo real y toma decisiones basadas en datos.
           </p>
-          <motion.a
-            href="/app"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-4 text-base font-semibold text-white hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-200 dark:shadow-blue-900/40"
+          <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
           >
-            Ir al Dashboard y Analizar
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </motion.a>
+            <a
+              href="/app"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-4 text-base font-semibold text-white hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-200 dark:shadow-blue-900/40"
+            >
+              Ir al Dashboard y Analizar
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </a>
+          </motion.div>
         </motion.div>
       </div>
     </motion.section>

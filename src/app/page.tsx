@@ -318,12 +318,21 @@ export default function LandingPage() {
                 </motion.span>
               </Link>
             </motion.div>
-            <Link
-              href="/app"
-              className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-600 px-8 py-4 text-base font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-            >
-              Ver demo
-            </Link>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Link
+                href="/app?demo=proceso-estable"
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-blue-600 dark:border-blue-400 px-8 py-4 text-base font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"
+              >
+                Ver Demo
+                <motion.span
+                  className="inline-flex"
+                  whileHover={{ x: 4 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </motion.span>
+              </Link>
+            </motion.div>
           </motion.div>
         </section>
 

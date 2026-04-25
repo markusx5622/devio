@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { RotateCcw, SlidersHorizontal, X } from 'lucide-react';
 import type { AnalysisResult, ProcessCapability } from '@/lib/spc/types';
@@ -285,10 +286,35 @@ function ResultsGrid({
 type PageState = 'upload' | 'results';
 
 export default function DashboardPage() {
+  const searchParams = useSearchParams();
+  const demoParam = searchParams.get('demo');
+
   const [pageState, setPageState] = useState<PageState>('upload');
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [extraCapability, setExtraCapability] = useState<ProcessCapability | null>(null);
   const [showSpecModal, setShowSpecModal] = useState(false);
+  const [isLoadingDemo, setIsLoadingDemo] = useState(demoParam ? true : false);
+
+  // Cargar demo automáticamente si viene con ?demo=<id>
+  useEffect(() => {
+    if (demoParam && isLoadingDemo) {
+      const loadDemo = async () => {
+        try {
+          const res = await fetch(`/api/demo/${demoParam}`);
+          if (res.ok) {
+            const result = (await res.json()) as AnalysisResult;
+            setAnalysis(result);
+            setPageState('results');
+          }
+        } catch (err) {
+          console.error('Error loading demo:', err);
+        } finally {
+          setIsLoadingDemo(false);
+        }
+      };
+      loadDemo();
+    }
+  }, [demoParam, isLoadingDemo]);
 
   const handleSuccess = useCallback((result: AnalysisResult) => {
     setAnalysis(result);
@@ -338,7 +364,30 @@ export default function DashboardPage() {
       </div>
 
       <AnimatePresence mode="wait">
-        {pageState === 'upload' && (
+        {isLoadingDemo && (
+          <motion.div
+            key="loading-demo"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center justify-center gap-4 py-12"
+          >
+            <div className="flex gap-2">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 0.6, delay: i * 0.1, repeat: Infinity }}
+                />
+              ))}
+            </div>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">Cargando demostración...</p>
+          </motion.div>
+        )}
+
+        {pageState === 'upload' && !isLoadingDemo && (
           <motion.div
             key="upload"
             initial={{ opacity: 0, y: 8 }}
