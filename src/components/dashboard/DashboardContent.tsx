@@ -7,9 +7,9 @@ import { RotateCcw } from 'lucide-react';
 import { UploadDropzone } from '@/components/upload/UploadDropzone';
 import { ControlChart } from '@/components/charts/ControlChart';
 import { CapabilityCard } from '@/components/charts/CapabilityCard';
-import { ViolationTable } from '@/components/tables/ViolationTable';
+import { ViolationTable } from '@/components/results/ViolationTable';
 import { InsightsPanel } from '@/components/ai/InsightsPanel';
-import { ExportButton } from '@/components/export/ExportButton';
+import { ExportButton } from '@/components/results/ExportButton';
 import { computeCapability } from '@/lib/spc';
 import type { AnalysisResult, ProcessCapability } from '@/lib/spc/types';
 
