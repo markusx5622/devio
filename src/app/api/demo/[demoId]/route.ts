@@ -1,7 +1,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import type { NextRequest } from 'next/server';
-import { analyzeProcess } from '@/lib/spc';
+import { analyzeProcess, detectLayout, parseCsv } from '@/lib/spc';
+import type { ChartInput, AnalyzeOptions } from '@/lib/spc';
 import type { AnalysisResult } from '@/lib/spc/types';
 
 interface DemoConfig {
@@ -32,35 +33,48 @@ export async function GET(
     const csvPath = join(process.cwd(), 'public/demo', demoConfig.filename);
     const csvContent = readFileSync(csvPath, 'utf-8');
 
-    // Parse CSV (same logic as upload endpoint)
-    const lines = csvContent.trim().split('\n');
-    if (lines.length < 2) {
-      return Response.json({ error: 'Invalid CSV' }, { status: 400 });
+    // Parse CSV using the library function
+    const parseResult = parseCsv(csvContent);
+    if (!parseResult.ok) {
+      return Response.json({ error: parseResult.error.message }, { status: 400 });
     }
 
-    // Simple CSV parser (assumes comma-separated)
-    const data: number[][] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i]
-        .split(',')
-        .map((v) => parseFloat(v.trim()))
-        .filter((v) => !isNaN(v));
-      if (values.length > 0) {
-        data.push(values);
-      }
+    // Detect layout (individual vs subgroups)
+    const layoutResult = detectLayout(parseResult.value);
+    if (!layoutResult.ok) {
+      return Response.json({ error: layoutResult.error.message }, { status: 400 });
     }
 
-    if (data.length === 0) {
-      return Response.json({ error: 'No valid data' }, { status: 400 });
+    const layout = layoutResult.value;
+
+    // Build ChartInput
+    let chartInput: ChartInput;
+    if (layout.kind === 'individual') {
+      chartInput = { kind: 'individual', values: layout.values };
+    } else {
+      chartInput = {
+        kind: 'subgroup',
+        subgroupSize: layout.subgroupSize,
+        subgroups: layout.subgroups,
+      };
     }
 
-    // Analyze with the engine
-    const options = {
-      usl: demoConfig.specLimits?.usl,
-      lsl: demoConfig.specLimits?.lsl,
+    // Build options
+    const options: AnalyzeOptions = {
+      xbarSThreshold:
+        demoConfig.chartType === 'xbar-r'
+          ? 25
+          : demoConfig.chartType === 'xbar-s'
+            ? 1
+            : 10,
+      specLimits:
+        demoConfig.specLimits?.usl !== undefined && demoConfig.specLimits?.lsl !== undefined
+          ? { usl: demoConfig.specLimits.usl, lsl: demoConfig.specLimits.lsl }
+          : undefined,
     };
 
-    const result = analyzeProcess(data, options);
+    // Analyze
+    const result = analyzeProcess(chartInput, options);
 
     if (!result.ok) {
       return Response.json({ error: result.error.message }, { status: 400 });
