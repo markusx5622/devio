@@ -11,6 +11,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
+import { MathematicsSection } from '@/components/sections/MathematicsSection';
 
 // ---------------------------------------------------------------------------
 // Static data
@@ -352,6 +353,9 @@ export default function LandingPage() {
 
         {/* ── How it works ── */}
         <HowItWorks />
+
+        {/* ── Mathematics Deep Dive ── */}
+        <MathematicsSection />
 
         {/* ── Bottom CTA ── */}
         <motion.section
