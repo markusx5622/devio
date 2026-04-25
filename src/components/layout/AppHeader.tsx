@@ -1,14 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { BarChart2, Moon, Sun } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+
+function useDarkMode() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains('dark'));
+  }, []);
+
+  const toggle = useCallback(() => {
+    const next = !isDark;
+    document.documentElement.classList.toggle('dark', next);
+    try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch {}
+    setIsDark(next);
+  }, [isDark]);
+
+  return { isDark, toggle };
+}
 
 export function AppHeader() {
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const { isDark, toggle } = useDarkMode();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 0);
@@ -45,29 +63,53 @@ export function AppHeader() {
           Devio
         </Link>
 
-        <nav className="flex items-center gap-6 text-sm" aria-label="Navegación principal">
-          {links.map(({ href, label, active }) => (
-            <Link
-              key={href}
-              href={href}
-              className={[
-                'relative py-1 transition-colors duration-150',
-                active
-                  ? 'text-blue-600 dark:text-blue-400 font-medium pointer-events-none'
-                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100',
-              ].join(' ')}
-              aria-current={active ? 'page' : undefined}
-            >
-              {label}
-              {active && (
-                <motion.span
-                  layoutId="nav-underline"
-                  className="absolute -bottom-0.5 left-0 right-0 h-0.5 rounded-full bg-blue-600 dark:bg-blue-400"
-                />
-              )}
-            </Link>
-          ))}
-        </nav>
+        <div className="flex items-center gap-4">
+          <nav className="flex items-center gap-6 text-sm" aria-label="Navegación principal">
+            {links.map(({ href, label, active }) => (
+              <Link
+                key={href}
+                href={href}
+                className={[
+                  'relative py-1 transition-colors duration-150',
+                  active
+                    ? 'text-blue-600 dark:text-blue-400 font-medium pointer-events-none'
+                    : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100',
+                ].join(' ')}
+                aria-current={active ? 'page' : undefined}
+              >
+                {label}
+                {active && (
+                  <motion.span
+                    layoutId="nav-underline"
+                    className="absolute -bottom-0.5 left-0 right-0 h-0.5 rounded-full bg-blue-600 dark:bg-blue-400"
+                  />
+                )}
+              </Link>
+            ))}
+          </nav>
+
+          <motion.button
+            type="button"
+            onClick={toggle}
+            aria-label={isDark ? 'Activar modo claro' : 'Activar modo oscuro'}
+            className="rounded-lg p-2 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 transition-colors"
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={isDark ? 'sun' : 'moon'}
+                initial={{ rotate: -30, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 30, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="flex"
+              >
+                {isDark ? <Sun className="h-4 w-4" aria-hidden /> : <Moon className="h-4 w-4" aria-hidden />}
+              </motion.span>
+            </AnimatePresence>
+          </motion.button>
+        </div>
       </div>
     </header>
   );

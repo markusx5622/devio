@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Bar,
@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
   ComposedChart,
 } from 'recharts';
+import { useAnimatedNumber } from '@/lib/utils/useAnimatedNumber';
 import type { ProcessCapability, SpecLimits } from '@/lib/spc/types';
 import type { CapabilityCategory } from '@/lib/spc/capability';
 import { SpcTooltip } from '@/components/ui/SpcTooltip';
@@ -31,34 +32,6 @@ function categorize(v: number): CapabilityCategory {
   if (v >= 1.33) return 'adequate';
   if (v >= 1.0)  return 'marginal';
   return 'inadequate';
-}
-
-// ---------------------------------------------------------------------------
-// Animated number hook
-// ---------------------------------------------------------------------------
-
-function useAnimatedNumber(target: number, duration = 800): number {
-  const [current, setCurrent] = useState(0);
-  const rafRef = useRef<number>(0);
-
-  useEffect(() => {
-    const start = performance.now();
-
-    function step(now: number) {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // cubic ease-out
-      setCurrent(target * eased);
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(step);
-      }
-    }
-
-    rafRef.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [target, duration]);
-
-  return current;
 }
 
 // ---------------------------------------------------------------------------

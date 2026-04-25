@@ -6,6 +6,7 @@ import { SpcTooltip } from '@/components/ui/SpcTooltip';
 import {
   LineChart,
   Line,
+  ReferenceArea,
   ReferenceLine,
   XAxis,
   YAxis,
@@ -249,6 +250,12 @@ export function ControlChart({ analysis, chartType }: ControlChartProps) {
   const yMin = lcl - padding;
   const yMax = ucl + padding;
 
+  const sigma = (ucl - cl) / 3;
+  const s1p = cl + sigma;
+  const s2p = cl + 2 * sigma;
+  const s1n = cl - sigma;
+  const s2n = cl - 2 * sigma;
+
   const title = CHART_TITLES[chartType];
   const violationCount = data.filter((d) => d.violated).length;
 
@@ -260,7 +267,7 @@ export function ControlChart({ analysis, chartType }: ControlChartProps) {
       transition={{ duration: 0.4 }}
       whileHover={{ boxShadow: 'var(--shadow-card-hover)' }}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-1 py-1 -mx-1 rounded-lg bg-neutral-50/60 dark:bg-neutral-700/20">
         <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{title}</h3>
         {violationCount > 0 ? (
           <span className="inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/30 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
@@ -293,6 +300,19 @@ export function ControlChart({ analysis, chartType }: ControlChartProps) {
             width={56}
           />
           <Tooltip content={<CustomTooltip />} />
+
+          {/* Sigma zones: rojo zona A (±2σ–±3σ), naranja zona B (±1σ–±2σ), verde zona C (±1σ) */}
+          <ReferenceArea y1={s2p} y2={ucl}  fill="#ef4444" fillOpacity={0.05} />
+          <ReferenceArea y1={s1p} y2={s2p}  fill="#f97316" fillOpacity={0.06} />
+          <ReferenceArea y1={s1n} y2={s1p}  fill="#22c55e" fillOpacity={0.05} />
+          <ReferenceArea y1={s2n} y2={s1n}  fill="#f97316" fillOpacity={0.06} />
+          <ReferenceArea y1={lcl}  y2={s2n} fill="#ef4444" fillOpacity={0.05} />
+
+          {/* Sigma reference lines ±1σ and ±2σ */}
+          <ReferenceLine y={s2p} stroke="#f97316" strokeDasharray="2 4" strokeWidth={1} strokeOpacity={0.35} label={<RefLabel value="+2σ" color="#f97316" />} />
+          <ReferenceLine y={s1p} stroke="#22c55e" strokeDasharray="2 4" strokeWidth={1} strokeOpacity={0.35} label={<RefLabel value="+1σ" color="#22c55e" />} />
+          <ReferenceLine y={s1n} stroke="#22c55e" strokeDasharray="2 4" strokeWidth={1} strokeOpacity={0.35} label={<RefLabel value="-1σ" color="#22c55e" />} />
+          <ReferenceLine y={s2n} stroke="#f97316" strokeDasharray="2 4" strokeWidth={1} strokeOpacity={0.35} label={<RefLabel value="-2σ" color="#f97316" />} />
 
           {/* Control limit reference lines with opaque labels */}
           <ReferenceLine

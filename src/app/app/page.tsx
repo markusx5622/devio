@@ -6,6 +6,7 @@ import { RotateCcw, SlidersHorizontal, X } from 'lucide-react';
 import type { AnalysisResult, ProcessCapability } from '@/lib/spc/types';
 import { allValues } from '@/lib/spc/stats';
 import { computeCapability } from '@/lib/spc/capability';
+import { useAnimatedNumber } from '@/lib/utils/useAnimatedNumber';
 import { UploadDropzone } from '@/components/upload/UploadDropzone';
 import { ControlChart } from '@/components/charts/ControlChart';
 import { CapabilityCard } from '@/components/charts/CapabilityCard';
@@ -138,19 +139,17 @@ function SpecLimitsModal({
 // Summary strip
 // ---------------------------------------------------------------------------
 
+function AnimatedKpi({ value }: { value: number }) {
+  const animated = useAnimatedNumber(value, 600);
+  return (
+    <span className="mt-0.5 text-lg font-bold font-mono tabular-nums text-neutral-800 dark:text-neutral-100">
+      {Math.round(animated)}
+    </span>
+  );
+}
+
 function SummaryStrip({ analysis }: { analysis: AnalysisResult }) {
   const { subgroupCount, totalMeasurements, violations, isInControl } = analysis;
-  const items = [
-    { label: 'Tipo de carta', value: chartLabel(analysis) },
-    { label: 'Subgrupos', value: String(subgroupCount) },
-    { label: 'Mediciones', value: String(totalMeasurements) },
-    { label: 'Violaciones', value: String(violations.length) },
-    {
-      label: 'Estado',
-      value: isInControl ? 'Bajo control' : 'Fuera de control',
-      highlight: isInControl ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
-    },
-  ];
 
   return (
     <motion.div
@@ -159,14 +158,38 @@ function SummaryStrip({ analysis }: { analysis: AnalysisResult }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
     >
-      {items.map(({ label, value, highlight }) => (
-        <div key={label} className="text-center">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide">{label}</p>
-          <p className={`mt-0.5 text-lg font-bold font-mono ${highlight ?? 'text-neutral-800 dark:text-neutral-100'}`}>
-            {value}
-          </p>
-        </div>
-      ))}
+      <div className="text-center">
+        <p className="text-xs text-neutral-400 uppercase tracking-wide">Tipo de carta</p>
+        <p className="mt-0.5 text-lg font-bold font-mono text-neutral-800 dark:text-neutral-100">
+          {chartLabel(analysis)}
+        </p>
+      </div>
+      <div className="text-center">
+        <p className="text-xs text-neutral-400 uppercase tracking-wide">Subgrupos</p>
+        <AnimatedKpi value={subgroupCount} />
+      </div>
+      <div className="text-center">
+        <p className="text-xs text-neutral-400 uppercase tracking-wide">Mediciones</p>
+        <AnimatedKpi value={totalMeasurements} />
+      </div>
+      <div className="text-center">
+        <p className="text-xs text-neutral-400 uppercase tracking-wide">Violaciones</p>
+        <AnimatedKpi value={violations.length} />
+      </div>
+      <div className="text-center">
+        <p className="text-xs text-neutral-400 uppercase tracking-wide">Estado</p>
+        {isInControl ? (
+          <span className="mt-0.5 flex items-center justify-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" aria-hidden />
+            <span className="text-sm font-bold font-mono text-green-600 dark:text-green-400">Bajo control</span>
+          </span>
+        ) : (
+          <span className="mt-0.5 flex items-center justify-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-red-500 urgency-pulse shrink-0" aria-hidden />
+            <span className="text-sm font-bold font-mono text-red-600 dark:text-red-400">Fuera de control</span>
+          </span>
+        )}
+      </div>
     </motion.div>
   );
 }

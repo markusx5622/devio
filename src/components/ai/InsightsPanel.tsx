@@ -100,6 +100,18 @@ function StatusBadge({ status }: { status: SpcInsights['processStatus'] }) {
 }
 
 // ---------------------------------------------------------------------------
+// DMAIC step config (shared by stepper and section labels)
+// ---------------------------------------------------------------------------
+
+const DMAIC_STEPS = [
+  { label: 'D', full: 'Definir',   color: 'bg-purple-500', textColor: 'text-purple-600 dark:text-purple-400' },
+  { label: 'M', full: 'Medir',     color: 'bg-blue-500',   textColor: 'text-blue-600 dark:text-blue-400' },
+  { label: 'A', full: 'Analizar',  color: 'bg-cyan-500',   textColor: 'text-cyan-600 dark:text-cyan-400' },
+  { label: 'I', full: 'Mejorar',   color: 'bg-amber-500',  textColor: 'text-amber-600 dark:text-amber-400' },
+  { label: 'C', full: 'Controlar', color: 'bg-green-500',  textColor: 'text-green-600 dark:text-green-400' },
+] as const;
+
+// ---------------------------------------------------------------------------
 // Collapsible DMAIC section
 // ---------------------------------------------------------------------------
 
@@ -120,7 +132,7 @@ function DmaicSection({
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between py-2.5 text-xs hover:bg-neutral-50/60 dark:hover:bg-neutral-700/20 transition-colors duration-100 px-1 rounded"
       >
-        <span className="font-bold text-blue-600 dark:text-blue-400 w-16 text-left shrink-0">
+        <span className={`font-bold w-16 text-left shrink-0 ${DMAIC_STEPS.find(s => s.full === label)?.textColor ?? 'text-blue-600 dark:text-blue-400'}`}>
           {label}
         </span>
         <motion.span
@@ -207,18 +219,23 @@ function ViolationCard({
 }
 
 // ---------------------------------------------------------------------------
-// DMAIC progress bar
+// DMAIC progress stepper
 // ---------------------------------------------------------------------------
 
 function DmaicProgress() {
   return (
-    <div className="flex items-center gap-2 mb-3">
-      <div className="flex gap-1 flex-1">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex-1 h-1 rounded-full bg-blue-500 opacity-80" />
-        ))}
-      </div>
-      <span className="text-xs text-neutral-400 shrink-0">5/5 DMAIC</span>
+    <div className="flex items-start mb-4">
+      {DMAIC_STEPS.map((step, i) => (
+        <div key={step.label} className="flex items-center flex-1">
+          <div className="flex flex-col items-center flex-1">
+            <div className={`h-6 w-6 rounded-full ${step.color} flex items-center justify-center text-white text-[10px] font-bold shrink-0`}>
+              {step.label}
+            </div>
+            <span className="text-[9px] text-neutral-400 mt-0.5 hidden sm:block">{step.full}</span>
+          </div>
+          {i < 4 && <div className="h-0.5 flex-1 bg-neutral-200 dark:bg-neutral-700 -mt-3" />}
+        </div>
+      ))}
     </div>
   );
 }
@@ -320,7 +337,7 @@ export function InsightsPanel({ analysis }: InsightsPanelProps) {
       whileHover={{ boxShadow: 'var(--shadow-card-hover)' }}
     >
       {/* Header */}
-      <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-700 flex items-center">
+      <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-700 flex items-center bg-neutral-50/60 dark:bg-neutral-700/20">
         <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200 flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-blue-500" aria-hidden />
           Informe SPC
@@ -402,7 +419,7 @@ export function InsightsPanel({ analysis }: InsightsPanelProps) {
 
               {/* DMAIC — individually collapsible sections */}
               <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 overflow-hidden">
-                <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-700 flex items-center gap-2">
+                <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-700 flex items-center gap-2 bg-neutral-50/60 dark:bg-neutral-700/20">
                   <Target className="h-4 w-4 text-blue-500" aria-hidden />
                   <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">Plan DMAIC</span>
                 </div>
