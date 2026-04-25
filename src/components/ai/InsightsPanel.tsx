@@ -327,7 +327,7 @@ export function InsightsPanel({ analysis }: InsightsPanelProps) {
         </h3>
       </div>
 
-      <div className="p-4">
+      <div className="p-4 max-h-[60vh] overflow-y-auto">
         <AnimatePresence mode="wait">
           {state.status === 'loading' && (
             <motion.div
