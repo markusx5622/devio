@@ -6,7 +6,6 @@ import {
   Sparkles,
   AlertTriangle,
   CheckCircle2,
-  Clock,
   ChevronDown,
   Lightbulb,
   Target,

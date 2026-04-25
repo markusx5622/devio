@@ -13,10 +13,10 @@ interface DemoConfig {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { demoId: string } }
+  { params }: { params: Promise<{ demoId: string }> }
 ) {
   try {
-    const demoId = params.demoId;
+    const { demoId } = await params;
 
     // Read demo index to find the demo
     const indexPath = join(process.cwd(), 'public/demo/index.json');
